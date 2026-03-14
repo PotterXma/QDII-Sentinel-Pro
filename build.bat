@@ -17,6 +17,7 @@ pyinstaller --onefile --noconsole --name QDII_Sentinel ^
     --hidden-import pystray._win32 ^
     --hidden-import PIL ^
     --hidden-import PIL._tkinter_finder ^
+    --add-data "templates;templates" ^
     main.py
 
 echo [*] Copying config...

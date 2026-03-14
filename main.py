@@ -31,7 +31,7 @@ from deep_scanner import run_deep_scan
 from fx_tracker import update_exchange_rate
 from scorer import update_all_scores, get_top5_recommendations
 from notifier import send_daily_top5
-from app import app, set_last_scan_time
+from app import app, set_last_scan_time, set_scanning_state
 
 
 # ── 单实例锁 ─────────────────────────────────────────────
@@ -126,12 +126,15 @@ def _create_tray_icon_image():
 def task_basic_scan():
     """基础扫描: 限额 + 净值"""
     try:
+        set_scanning_state(True)
         logger.info("[定时] 基础扫描开始")
         run_full_scan()
         set_last_scan_time(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         logger.info("[定时] 基础扫描完成")
     except Exception as e:
         logger.error("[定时] 基础扫描异常: %s", str(e))
+    finally:
+        set_scanning_state(False)
 
 
 def task_deep_scan():

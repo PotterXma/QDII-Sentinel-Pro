@@ -53,6 +53,18 @@ def create_session():
     return session
 
 
+# ── HTML 清理 ────────────────────────────────────────────
+
+
+def _strip_html(text):
+    """移除 HTML 标签，只保留纯文本内容"""
+    if not text:
+        return text
+    cleaned = re.sub(r'<[^>]+>', '', text)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned
+
+
 # ── 限额解析 ─────────────────────────────────────────────
 
 
@@ -213,7 +225,8 @@ def fetch_fund_detail(session, code):
                 limit_text = buy_match.group(0).strip()
                 limit_text = re.sub(r'<[^>]+>', '', limit_text).strip()
 
-        result["limit_text"] = limit_text or "未知"
+        limit_text = _strip_html(limit_text) or "未知"
+        result["limit_text"] = limit_text
         result["limit_amount"] = parse_limit(limit_text)
 
         from datetime import datetime

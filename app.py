@@ -26,6 +26,12 @@ def set_last_scan_time(t):
     _last_scan_time = t
 
 
+def set_scanning_state(state):
+    """供 main.py 调用，标记扫描状态"""
+    global _is_scanning
+    _is_scanning = state
+
+
 def get_last_scan_time():
     return _last_scan_time
 
@@ -59,12 +65,19 @@ def index():
     open_count = sum(1 for f in all_funds if f["limit_amount"] > 0)
     paused_count = sum(1 for f in all_funds if f["limit_amount"] == 0.0)
 
+    # 如果 last_scan_time 仍为初始值，尝试从数据库最新记录推断
+    display_scan_time = _last_scan_time
+    if display_scan_time == "尚未扫描" and all_funds:
+        latest_update = max((f["last_update"] for f in all_funds if f.get("last_update")), default="")
+        if latest_update:
+            display_scan_time = latest_update
+
     return render_template(
         "index.html",
         funds=funds,
         query=q,
         sort_by=sort_by,
-        last_scan=_last_scan_time,
+        last_scan=display_scan_time,
         recent_changes=recent[:10],
         is_scanning=_is_scanning,
         total_count=len(all_funds),
@@ -125,12 +138,56 @@ def history():
 
 @app.route("/api/status")
 def api_status():
-    """JSON 状态接口"""
-    funds = get_all_funds()
+    """JSON 状态接口 — 含完整统计信息"""
+    all_funds = get_all_funds()
     fx = get_latest_rate()
+
+    display_scan_time = _last_scan_time
+    if display_scan_time == "尚未扫描" and all_funds:
+        latest_update = max((f["last_update"] for f in all_funds if f.get("last_update")), default="")
+        if latest_update:
+            display_scan_time = latest_update
+
+    recent = get_recent_changes(hours=24)
+
     return jsonify({
-        "last_scan": _last_scan_time,
-        "fund_count": len(funds),
+        "last_scan": display_scan_time,
+        "fund_count": len(all_funds),
         "is_scanning": _is_scanning,
         "fx_rate": fx["rate"] if fx else None,
+        "fx_time": fx["recorded_at"] if fx else None,
+        "open_count": sum(1 for f in all_funds if f["limit_amount"] > 0),
+        "paused_count": sum(1 for f in all_funds if f["limit_amount"] == 0.0),
+        "change_count": len(recent),
     })
+
+
+@app.route("/api/funds")
+def api_funds():
+    """JSON 基金数据接口 — 供前端静默刷新"""
+    sort_by = request.args.get("sort", "score")
+    q = request.args.get("q", "").strip()
+
+    funds = get_funds_with_details(order_by=sort_by)
+
+    if q:
+        funds = [
+            f for f in funds
+            if q.lower() in f["name"].lower() or q in f["code"]
+        ]
+
+    result = []
+    for f in funds:
+        result.append({
+            "code": f["code"],
+            "name": f["name"],
+            "score": f.get("score", 0) or 0,
+            "limit_amount": f["limit_amount"],
+            "limit_text": f.get("limit_text", ""),
+            "current_nav": f.get("current_nav", 0),
+            "day_growth": f.get("day_growth", 0),
+            "fund_size": f.get("fund_size", 0),
+            "last_update": f.get("last_update", ""),
+        })
+
+    return jsonify(result)

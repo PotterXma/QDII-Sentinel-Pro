@@ -3,328 +3,616 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QDII Watcher — QDII 基金监控平台</title>
-    <meta name="description" content="实时监控 QDII 基金申购限额、评分、汇率">
+    <title>QDII Sentinel Pro — QDII 基金监控平台</title>
+    <meta name="description" content="实时监控 QDII 基金申购限额、智能评分、汇率追踪">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
         :root {
-            --bg-primary: #0f1117;
-            --bg-secondary: #1a1d26;
-            --bg-card: #22252f;
-            --bg-hover: #2a2e3a;
-            --text-primary: #e8eaed;
-            --text-secondary: #9aa0a8;
-            --text-muted: #5f6368;
-            --accent-blue: #6c9eff;
-            --accent-gradient: linear-gradient(135deg, #667eea, #764ba2);
-            --border: #2e3241;
-            --red: #ef5350;
-            --yellow: #ffc107;
-            --green: #66bb6a;
-            --gray: #78909c;
-            --radius: 12px;
-            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+            --bg-base: #0a0e1a;
+            --bg-surface: #111827;
+            --bg-card: #1a2035;
+            --bg-card-hover: #212942;
+            --bg-glass: rgba(26, 32, 53, 0.7);
+            --text-primary: #f0f2f5;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #818cf8;
+            --accent-light: #a5b4fc;
+            --accent-glow: rgba(129, 140, 248, 0.15);
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-warm: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-cool: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --gradient-success: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --border: rgba(148, 163, 184, 0.08);
+            --border-accent: rgba(129, 140, 248, 0.2);
+            --red: #f87171;
+            --red-bg: rgba(248, 113, 113, 0.12);
+            --green: #4ade80;
+            --green-bg: rgba(74, 222, 128, 0.12);
+            --yellow: #fbbf24;
+            --yellow-bg: rgba(251, 191, 36, 0.12);
+            --blue: #60a5fa;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 0 40px rgba(129, 140, 248, 0.06);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-base);
             color: var(--text-primary);
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
+        /* Ambient background glow */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.03) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 80%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
+            z-index: -1;
+            animation: ambientDrift 20s ease-in-out infinite alternate;
+        }
+        @keyframes ambientDrift {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-2%, 1%) scale(1.02); }
+        }
+
+        /* ─── Header ─── */
         .header {
-            background: var(--accent-gradient);
-            padding: 28px 32px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.9) 0%, rgba(139, 92, 246, 0.9) 50%, rgba(168, 85, 247, 0.85) 100%);
+            backdrop-filter: blur(20px);
+            padding: 24px 40px;
             display: flex; align-items: center; justify-content: space-between;
             flex-wrap: wrap; gap: 16px;
-            box-shadow: var(--shadow);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            position: sticky; top: 0; z-index: 100;
         }
-        .header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
-        .header h1 span { font-size: 1.6rem; }
-        .header-meta { display: flex; align-items: center; gap: 20px; font-size: 0.85rem; color: rgba(255,255,255,0.85); }
-        .badge { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; backdrop-filter: blur(4px); }
-        .badge.scanning { animation: pulse 1.5s ease-in-out infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .header-brand { display: flex; align-items: center; gap: 14px; }
+        .header-logo {
+            width: 42px; height: 42px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .header h1 { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
+        .header-subtitle { font-size: 0.72rem; color: rgba(255,255,255,0.65); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .header-time { font-size: 0.8rem; color: rgba(255,255,255,0.75); display: flex; align-items: center; gap: 6px; }
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: var(--transition);
+        }
+        .status-pill .dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+        .status-pill.scanning .dot { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); animation: blink 1.2s ease-in-out infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
+        /* ─── Toolbar ─── */
         .toolbar {
-            display: flex; align-items: center; gap: 12px;
-            padding: 16px 32px; background: var(--bg-secondary);
+            display: flex; align-items: center; gap: 10px;
+            padding: 14px 40px; background: var(--bg-surface);
             border-bottom: 1px solid var(--border); flex-wrap: wrap;
         }
-        .search-box { flex: 1; min-width: 200px; position: relative; }
-        .search-box input {
-            width: 100%; padding: 10px 16px 10px 40px;
+        .search-wrap { flex: 1; min-width: 220px; position: relative; }
+        .search-wrap .icon {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted); font-size: 0.85rem; pointer-events: none;
+        }
+        .search-wrap input {
+            width: 100%; padding: 10px 16px 10px 42px;
             background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 8px; color: var(--text-primary);
-            font-size: 0.9rem; outline: none; transition: border 0.2s;
+            border-radius: var(--radius-sm); color: var(--text-primary);
+            font-size: 0.88rem; font-family: inherit; outline: none;
+            transition: var(--transition);
         }
-        .search-box input:focus { border-color: var(--accent-blue); }
-        .search-box::before { content:'🔍'; position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:0.9rem; }
+        .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .search-wrap input::placeholder { color: var(--text-muted); }
+
         .btn {
-            padding: 10px 20px; border: none; border-radius: 8px;
-            font-size: 0.85rem; font-weight: 600; cursor: pointer;
-            transition: all 0.2s; text-decoration: none;
-            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 18px; border: none; border-radius: var(--radius-sm);
+            font-size: 0.82rem; font-weight: 600; font-family: inherit;
+            cursor: pointer; transition: var(--transition);
+            text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
         }
-        .btn-primary { background: var(--accent-gradient); color: #fff; }
-        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); }
-        .btn-secondary:hover { background: var(--bg-hover); }
-        .btn-active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        .btn-sort {
+            background: var(--bg-card); color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .btn-sort:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .btn-sort.active { background: var(--accent-glow); color: var(--accent-light); border-color: var(--border-accent); }
+        .btn-action {
+            background: var(--gradient-primary); color: #fff;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        .btn-action:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); }
+        .btn-action:active { transform: translateY(0); }
+        .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: var(--bg-card); color: var(--text-primary); }
 
-        .content { padding: 24px 32px; }
+        /* ─── Content ─── */
+        .content { padding: 28px 40px; max-width: 1600px; margin: 0 auto; }
 
+        /* ─── Stats Grid ─── */
         .stats {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 16px; margin-bottom: 24px;
+            display: grid; grid-template-columns: repeat(5, 1fr);
+            gap: 16px; margin-bottom: 28px;
         }
         .stat-card {
-            background: var(--bg-card); border-radius: var(--radius);
-            padding: 18px 20px; border: 1px solid var(--border);
-            transition: transform 0.2s;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 22px;
+            position: relative; overflow: hidden;
+            transition: var(--transition);
         }
-        .stat-card:hover { transform: translateY(-2px); }
-        .stat-label { color: var(--text-secondary); font-size: 0.78rem; margin-bottom: 6px; }
-        .stat-value { font-size: 1.5rem; font-weight: 700; }
-        .stat-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
-        .stat-value.green { color: var(--green); }
-        .stat-value.red { color: var(--red); }
-        .stat-value.yellow { color: var(--yellow); }
-        .stat-value.blue { color: var(--accent-blue); }
+        .stat-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .stat-card:nth-child(1)::before { background: var(--gradient-primary); }
+        .stat-card:nth-child(2)::before { background: var(--gradient-success); }
+        .stat-card:nth-child(3)::before { background: var(--gradient-warm); }
+        .stat-card:nth-child(4)::before { background: var(--gradient-cool); }
+        .stat-card:nth-child(5)::before { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-glow); border-color: var(--border-accent); }
+        .stat-icon { font-size: 1.5rem; margin-bottom: 10px; }
+        .stat-label { color: var(--text-muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+        .stat-value { font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; }
+        .stat-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
+        .stat-value.v-purple { color: var(--accent-light); }
+        .stat-value.v-green { color: var(--green); }
+        .stat-value.v-red { color: var(--red); }
+        .stat-value.v-blue { color: var(--blue); }
+        .stat-value.v-yellow { color: var(--yellow); }
 
-        .table-container {
-            background: var(--bg-card); border-radius: var(--radius);
-            border: 1px solid var(--border); overflow-x: auto;
-            box-shadow: var(--shadow);
+        /* ─── Table ─── */
+        .table-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
         }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        thead tr { background: var(--accent-gradient); }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        thead { position: sticky; top: 0; z-index: 10; }
+        thead tr { background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1)); }
         th {
-            padding: 14px 12px; text-align: left; font-size: 0.78rem;
-            font-weight: 600; text-transform: uppercase;
-            letter-spacing: 0.5px; color: #fff; white-space: nowrap;
+            padding: 14px 14px; text-align: left; font-size: 0.7rem;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--accent-light); white-space: nowrap;
+            border-bottom: 1px solid var(--border-accent);
         }
         td {
-            padding: 11px 12px; font-size: 0.85rem;
-            border-bottom: 1px solid var(--border); transition: background 0.15s;
+            padding: 13px 14px; font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+            transition: var(--transition);
         }
-        tr:hover td { background: var(--bg-hover); }
-        tr:last-child td { border-bottom: none; }
+        tbody tr { transition: var(--transition); }
+        tbody tr:hover { background: rgba(129, 140, 248, 0.04); }
+        tbody tr:last-child td { border-bottom: none; }
 
-        .fund-code { font-family: 'Courier New', monospace; color: var(--accent-blue); font-weight: 600; }
-        .fund-name a { color: var(--text-primary); text-decoration: none; transition: color 0.2s; }
-        .fund-name a:hover { color: var(--accent-blue); }
-
-        .limit-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
-        .limit-red { background: rgba(239,83,80,0.15); color: var(--red); }
-        .limit-yellow { background: rgba(255,193,7,0.15); color: var(--yellow); }
-        .limit-green { background: rgba(102,187,106,0.15); color: var(--green); }
-        .limit-gray { background: rgba(120,144,156,0.15); color: var(--gray); }
-
-        .score-bar { display: flex; align-items: center; gap: 8px; }
-        .score-track { width: 50px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
-        .score-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-        .score-val { font-weight: 600; font-size: 0.82rem; min-width: 32px; }
-
-        .growth-pos { color: var(--red); font-weight: 600; }
-        .growth-neg { color: var(--green); font-weight: 600; }
-        .growth-zero { color: var(--text-muted); }
-
-        .section-title { font-size: 1.1rem; font-weight: 700; margin: 32px 0 16px; display: flex; align-items: center; gap: 8px; }
-        .change-list { display: grid; gap: 10px; }
-        .change-item {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 8px; padding: 12px 16px;
-            display: flex; align-items: center; gap: 16px;
-            font-size: 0.85rem; transition: transform 0.15s;
+        .fund-code {
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            color: var(--accent); font-weight: 600; font-size: 0.82rem;
         }
-        .change-item:hover { transform: translateX(4px); }
-        .change-time { color: var(--text-muted); font-size: 0.78rem; min-width: 130px; }
+        .fund-name a {
+            color: var(--text-primary); text-decoration: none;
+            font-weight: 500; transition: var(--transition);
+        }
+        .fund-name a:hover { color: var(--accent-light); }
 
-        .empty { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
-        .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+        /* Score */
+        .score-cell { display: flex; align-items: center; gap: 10px; }
+        .score-ring {
+            width: 36px; height: 36px; position: relative;
+        }
+        .score-ring svg { width: 36px; height: 36px; transform: rotate(-90deg); }
+        .score-ring .track { fill: none; stroke: var(--border); stroke-width: 3; }
+        .score-ring .fill { fill: none; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+        .score-num {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            font-size: 0.68rem; font-weight: 800;
+        }
 
+        /* Limit badge */
+        .limit-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 0.76rem; font-weight: 600;
+            backdrop-filter: blur(4px);
+        }
+        .limit-pill.l-red { background: var(--red-bg); color: var(--red); }
+        .limit-pill.l-green { background: var(--green-bg); color: var(--green); }
+        .limit-pill.l-yellow { background: var(--yellow-bg); color: var(--yellow); }
+        .limit-pill.l-gray { background: rgba(100, 116, 139, 0.12); color: var(--text-muted); }
+
+        .nav-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+        .growth { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 0.82rem; }
+        .growth.up { color: var(--red); }
+        .growth.down { color: var(--green); }
+        .growth.flat { color: var(--text-muted); }
+        .detail-text { color: var(--text-muted); font-size: 0.76rem; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .size-text { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+        .time-text { color: var(--text-muted); font-size: 0.76rem; white-space: nowrap; }
+
+        /* Update flash */
+        @keyframes rowFlash {
+            0% { background: rgba(129, 140, 248, 0.12); }
+            100% { background: transparent; }
+        }
+        tr.updated { animation: rowFlash 1.5s ease-out; }
+
+        /* ─── Empty ─── */
+        .empty { text-align: center; padding: 80px 20px; }
+        .empty-icon { font-size: 3.5rem; margin-bottom: 16px; opacity: 0.6; }
+        .empty-text { color: var(--text-secondary); font-size: 0.95rem; }
+
+        /* ─── Footer ─── */
+        .footer {
+            text-align: center; padding: 24px 40px;
+            color: var(--text-muted); font-size: 0.72rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 1200px) { .stats { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 768px) {
-            .header, .toolbar, .content { padding-left: 16px; padding-right: 16px; }
-            .header h1 { font-size: 1.2rem; }
+            .header, .toolbar, .content { padding-left: 20px; padding-right: 20px; }
             .stats { grid-template-columns: repeat(2, 1fr); }
+            .header h1 { font-size: 1.15rem; }
         }
+
+        /* ─── Scrollbar ─── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        /* Skeleton loading */
+        .skeleton { background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     </style>
 </head>
 <body>
     <header class="header">
-        <h1><span>📊</span> QDII Watcher</h1>
-        <div class="header-meta">
-            <span>🕐 更新: {{ last_scan }}</span>
-            <span class="badge {{ 'scanning' if is_scanning else '' }}">
-                {{ '⏳ 扫描中...' if is_scanning else '✅ 就绪' }}
-            </span>
+        <div class="header-brand">
+            <div class="header-logo">🛡️</div>
+            <div>
+                <h1>QDII Sentinel Pro</h1>
+                <div class="header-subtitle">Real-Time QDII Fund Monitor</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="header-time" id="headerTime">
+                <span>🕐</span> <span id="lastScanTime">{{ last_scan }}</span>
+            </div>
+            <div class="status-pill {{ 'scanning' if is_scanning else '' }}" id="statusPill">
+                <span class="dot"></span>
+                <span id="statusText">{{ '扫描中...' if is_scanning else '就绪' }}</span>
+            </div>
         </div>
     </header>
 
-    <div class="toolbar">
-        <div class="search-box">
-            <form method="get" action="/" style="display:contents">
-                <input type="text" name="q" value="{{ query }}"
-                       placeholder="搜索基金名称或代码..." id="searchInput">
-                <input type="hidden" name="sort" value="{{ sort_by }}">
-            </form>
+    <div class="toolbar" id="toolbar">
+        <div class="search-wrap">
+            <span class="icon">🔍</span>
+            <input type="text" id="searchInput" value="{{ query }}" placeholder="搜索基金名称或代码...">
         </div>
-        <a href="/?sort=score" class="btn btn-secondary {{ 'btn-active' if sort_by=='score' else '' }}">⭐ 评分</a>
-        <a href="/?sort=limit" class="btn btn-secondary {{ 'btn-active' if sort_by=='limit' else '' }}">📊 限额</a>
+        <a href="/?sort=score" class="btn btn-sort {{ 'active' if sort_by=='score' else '' }}" data-sort="score">⭐ 评分</a>
+        <a href="/?sort=limit" class="btn btn-sort {{ 'active' if sort_by=='limit' else '' }}" data-sort="limit">📊 限额</a>
         <form method="post" action="/refresh" style="display:inline">
-            <button type="submit" class="btn btn-primary" {{ 'disabled' if is_scanning else '' }}>🔄 刷新</button>
+            <button type="submit" class="btn btn-action" id="refreshBtn" {{ 'disabled' if is_scanning else '' }}>🔄 刷新数据</button>
         </form>
-        <a href="/history" class="btn btn-secondary">📜 历史</a>
+        <a href="/history" class="btn btn-ghost">📜 历史</a>
     </div>
 
     <div class="content">
         <div class="stats">
             <div class="stat-card">
+                <div class="stat-icon">📡</div>
                 <div class="stat-label">监控总数</div>
-                <div class="stat-value">{{ total_count }}</div>
+                <div class="stat-value v-purple" id="statTotal">{{ total_count }}</div>
             </div>
             <div class="stat-card">
+                <div class="stat-icon">✅</div>
                 <div class="stat-label">开放申购</div>
-                <div class="stat-value green">{{ open_count }}</div>
+                <div class="stat-value v-green" id="statOpen">{{ open_count }}</div>
             </div>
             <div class="stat-card">
+                <div class="stat-icon">🚫</div>
                 <div class="stat-label">暂停申购</div>
-                <div class="stat-value red">{{ paused_count }}</div>
+                <div class="stat-value v-red" id="statPaused">{{ paused_count }}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">24h 变动</div>
-                <div class="stat-value yellow">{{ recent_changes | length }}</div>
+                <div class="stat-icon">⚡</div>
+                <div class="stat-label">24H 变动</div>
+                <div class="stat-value v-yellow" id="statChanges">{{ recent_changes | length }}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">USD/CNY 汇率</div>
+                <div class="stat-icon">💱</div>
+                <div class="stat-label">USD/CNY</div>
                 {% if fx_rate %}
-                <div class="stat-value blue">{{ "%.4f" | format(fx_rate) }}</div>
-                <div class="stat-sub">{{ fx_time }}</div>
+                <div class="stat-value v-blue" id="statFx">{{ "%.4f" | format(fx_rate) }}</div>
+                <div class="stat-sub" id="statFxTime">{{ fx_time }}</div>
                 {% else %}
-                <div class="stat-value" style="color:var(--text-muted)">—</div>
+                <div class="stat-value" id="statFx" style="color:var(--text-muted)">—</div>
+                <div class="stat-sub" id="statFxTime"></div>
                 {% endif %}
             </div>
         </div>
 
-        {% if funds %}
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>代码</th>
-                        <th>基金名称</th>
-                        <th>评分</th>
-                        <th>申购限额</th>
-                        <th>限额详情</th>
-                        <th>净值</th>
-                        <th>日涨跌</th>
-                        <th>规模(亿)</th>
-                        <th>更新</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for f in funds %}
-                    <tr>
-                        <td class="fund-code">{{ f.code }}</td>
-                        <td class="fund-name">
-                            <a href="http://fund.eastmoney.com/{{ f.code }}.html" target="_blank" rel="noopener">
-                                {{ f.name }}
-                            </a>
-                        </td>
-                        <td>
-                            {% set sc = f.score|default(0)|float %}
-                            <div class="score-bar">
-                                <div class="score-track">
-                                    <div class="score-fill" style="width:{{ sc }}%;background:{% if sc >= 70 %}var(--green){% elif sc >= 40 %}var(--yellow){% else %}var(--red){% endif %}"></div>
+        <div class="table-wrap">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>代码</th>
+                            <th>基金名称</th>
+                            <th style="text-align:center">评分</th>
+                            <th>申购状态</th>
+                            <th>限额详情</th>
+                            <th style="text-align:right">净值</th>
+                            <th style="text-align:right">日涨跌</th>
+                            <th style="text-align:right">规模(亿)</th>
+                            <th>更新时间</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fundTableBody">
+                    {% for f in funds %}
+                        <tr data-code="{{ f.code }}">
+                            <td class="fund-code">{{ f.code }}</td>
+                            <td class="fund-name">
+                                <a href="http://fund.eastmoney.com/{{ f.code }}.html" target="_blank" rel="noopener">{{ f.name }}</a>
+                            </td>
+                            <td style="text-align:center">
+                                {% set sc = f.score|default(0)|float %}
+                                {% set color = '#4ade80' if sc >= 70 else '#fbbf24' if sc >= 40 else '#f87171' %}
+                                {% set circ = 94.2 %}
+                                {% set offset = circ - (circ * sc / 100) %}
+                                <div class="score-cell" style="justify-content:center">
+                                    <div class="score-ring">
+                                        <svg viewBox="0 0 36 36">
+                                            <circle class="track" cx="18" cy="18" r="15"/>
+                                            <circle class="fill" cx="18" cy="18" r="15"
+                                                stroke="{{ color }}"
+                                                stroke-dasharray="{{ circ }}"
+                                                stroke-dashoffset="{{ offset }}"/>
+                                        </svg>
+                                        <span class="score-num" style="color:{{ color }}">{{ "%.0f" | format(sc) }}</span>
+                                    </div>
                                 </div>
-                                <span class="score-val" style="color:{% if sc >= 70 %}var(--green){% elif sc >= 40 %}var(--yellow){% else %}var(--red){% endif %}">{{ "%.0f" | format(sc) }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            {% if f.limit_amount == 0.0 %}
-                                <span class="limit-badge limit-red">🔴 暂停</span>
-                            {% elif f.limit_amount == -2.0 %}
-                                <span class="limit-badge limit-yellow">🟡 限大额</span>
-                            {% elif f.limit_amount == -1.0 %}
-                                <span class="limit-badge limit-gray">⚪ 未知</span>
-                            {% elif f.limit_amount >= 999999.0 %}
-                                <span class="limit-badge limit-green">🟢 不限</span>
-                            {% elif f.limit_amount <= 1.0 %}
-                                <span class="limit-badge limit-yellow">🟡 {{ "%.2f" | format(f.limit_amount) }}万</span>
-                            {% else %}
-                                <span class="limit-badge limit-green">🟢 {{ "%.2f" | format(f.limit_amount) }}万</span>
-                            {% endif %}
-                        </td>
-                        <td style="color:var(--text-secondary);font-size:0.78rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                            {{ f.limit_text or '-' }}
-                        </td>
-                        <td style="font-weight:600">{{ "%.4f" | format(f.current_nav) if f.current_nav else '-' }}</td>
-                        <td>
-                            {% if f.day_growth > 0 %}
-                                <span class="growth-pos">+{{ "%.2f" | format(f.day_growth * 100) }}%</span>
-                            {% elif f.day_growth < 0 %}
-                                <span class="growth-neg">{{ "%.2f" | format(f.day_growth * 100) }}%</span>
-                            {% else %}
-                                <span class="growth-zero">0.00%</span>
-                            {% endif %}
-                        </td>
-                        <td style="color:var(--text-secondary);font-size:0.82rem">
-                            {{ "%.2f" | format(f.fund_size) if f.fund_size else '-' }}
-                        </td>
-                        <td style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">{{ f.last_update }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="empty">
-            <div class="empty-icon">📭</div>
-            <div class="empty-text">
-                {% if query %}未找到匹配 "{{ query }}" 的基金{% else %}暂无数据，请点击「刷新」开始首次扫描{% endif %}
+                            </td>
+                            <td>
+                                {% if f.limit_amount == 0.0 %}
+                                    <span class="limit-pill l-red">🔴 暂停</span>
+                                {% elif f.limit_amount == -2.0 %}
+                                    <span class="limit-pill l-yellow">🟡 限大额</span>
+                                {% elif f.limit_amount == -1.0 %}
+                                    <span class="limit-pill l-gray">⚪ 未知</span>
+                                {% elif f.limit_amount >= 999999.0 %}
+                                    <span class="limit-pill l-green">🟢 不限</span>
+                                {% elif f.limit_amount <= 1.0 %}
+                                    <span class="limit-pill l-yellow">🟡 {{ "%.2f" | format(f.limit_amount) }}万</span>
+                                {% else %}
+                                    <span class="limit-pill l-green">🟢 {{ "%.2f" | format(f.limit_amount) }}万</span>
+                                {% endif %}
+                            </td>
+                            <td class="detail-text">{{ f.limit_text or '-' }}</td>
+                            <td class="nav-val" style="text-align:right">{{ "%.4f" | format(f.current_nav) if f.current_nav else '-' }}</td>
+                            <td style="text-align:right">
+                                {% if f.day_growth > 0 %}
+                                    <span class="growth up">+{{ "%.2f" | format(f.day_growth * 100) }}%</span>
+                                {% elif f.day_growth < 0 %}
+                                    <span class="growth down">{{ "%.2f" | format(f.day_growth * 100) }}%</span>
+                                {% else %}
+                                    <span class="growth flat">0.00%</span>
+                                {% endif %}
+                            </td>
+                            <td class="size-text" style="text-align:right">{{ "%.2f" | format(f.fund_size) if f.fund_size else '-' }}</td>
+                            <td class="time-text">{{ f.last_update }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
-        </div>
-        {% endif %}
-
-        {% if recent_changes %}
-        <div class="section-title">⚡ 最近 24 小时变动</div>
-        <div class="change-list">
-            {% for c in recent_changes %}
-            <div class="change-item">
-                <span class="change-time">{{ c.changed_at }}</span>
-                <span class="fund-code">{{ c.code }}</span>
-                <span>{{ c.name }}</span>
-                <span style="color:var(--text-muted)">{{ c.old_text or '新增' }} → {{ c.new_text }}</span>
+            {% if not funds %}
+            <div class="empty" id="emptyState">
+                <div class="empty-icon">📭</div>
+                <div class="empty-text">
+                    {% if query %}未找到匹配 "{{ query }}" 的基金{% else %}暂无数据，请点击「刷新数据」开始首次扫描{% endif %}
+                </div>
             </div>
-            {% endfor %}
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 
+    <footer class="footer">
+        QDII Sentinel Pro · 数据每 <span id="refreshInterval">10</span> 秒自动刷新 · Powered by Eastmoney
+    </footer>
+
     <script>
-        const input = document.getElementById('searchInput');
-        if (input) {
-            input.addEventListener('input', function() {
-                const q = this.value.toLowerCase();
-                document.querySelectorAll('tbody tr').forEach(row => {
+    (function() {
+        'use strict';
+
+        const REFRESH_MS = 10000;
+        const STATUS_MS = 5000;
+        let currentSort = new URLSearchParams(window.location.search).get('sort') || 'score';
+        let currentQuery = '';
+
+        // ── Helper ──
+        function formatLimit(amount) {
+            if (amount === 0.0) return '<span class="limit-pill l-red">🔴 暂停</span>';
+            if (amount === -2.0) return '<span class="limit-pill l-yellow">🟡 限大额</span>';
+            if (amount === -1.0) return '<span class="limit-pill l-gray">⚪ 未知</span>';
+            if (amount >= 999999.0) return '<span class="limit-pill l-green">🟢 不限</span>';
+            if (amount <= 1.0) return `<span class="limit-pill l-yellow">🟡 ${amount.toFixed(2)}万</span>`;
+            return `<span class="limit-pill l-green">🟢 ${amount.toFixed(2)}万</span>`;
+        }
+
+        function formatGrowth(g) {
+            const pct = (g * 100).toFixed(2);
+            if (g > 0) return `<span class="growth up">+${pct}%</span>`;
+            if (g < 0) return `<span class="growth down">${pct}%</span>`;
+            return '<span class="growth flat">0.00%</span>';
+        }
+
+        function scoreColor(sc) {
+            if (sc >= 70) return '#4ade80';
+            if (sc >= 40) return '#fbbf24';
+            return '#f87171';
+        }
+
+        function scoreRing(sc) {
+            const color = scoreColor(sc);
+            const circ = 94.2;
+            const offset = circ - (circ * sc / 100);
+            return `<div class="score-cell" style="justify-content:center">
+                <div class="score-ring">
+                    <svg viewBox="0 0 36 36">
+                        <circle class="track" cx="18" cy="18" r="15"/>
+                        <circle class="fill" cx="18" cy="18" r="15"
+                            stroke="${color}"
+                            stroke-dasharray="${circ}"
+                            stroke-dashoffset="${offset}"/>
+                    </svg>
+                    <span class="score-num" style="color:${color}">${Math.round(sc)}</span>
+                </div>
+            </div>`;
+        }
+
+        function buildRow(f) {
+            return `<tr data-code="${f.code}">
+                <td class="fund-code">${f.code}</td>
+                <td class="fund-name"><a href="http://fund.eastmoney.com/${f.code}.html" target="_blank" rel="noopener">${f.name}</a></td>
+                <td style="text-align:center">${scoreRing(f.score || 0)}</td>
+                <td>${formatLimit(f.limit_amount)}</td>
+                <td class="detail-text">${f.limit_text || '-'}</td>
+                <td class="nav-val" style="text-align:right">${f.current_nav ? f.current_nav.toFixed(4) : '-'}</td>
+                <td style="text-align:right">${formatGrowth(f.day_growth || 0)}</td>
+                <td class="size-text" style="text-align:right">${f.fund_size ? f.fund_size.toFixed(2) : '-'}</td>
+                <td class="time-text">${f.last_update || ''}</td>
+            </tr>`;
+        }
+
+        // ── Silent data refresh ──
+        async function refreshFunds() {
+            try {
+                const params = new URLSearchParams({ sort: currentSort });
+                if (currentQuery) params.set('q', currentQuery);
+                const resp = await fetch('/api/funds?' + params);
+                if (!resp.ok) return;
+                const funds = await resp.json();
+
+                const tbody = document.getElementById('fundTableBody');
+                const existingCodes = new Set();
+                tbody.querySelectorAll('tr[data-code]').forEach(r => existingCodes.add(r.dataset.code));
+
+                const newHTML = funds.map(f => buildRow(f)).join('');
+                tbody.innerHTML = newHTML;
+
+                // Flash updated rows
+                const newCodes = new Set(funds.map(f => f.code));
+                tbody.querySelectorAll('tr[data-code]').forEach(tr => {
+                    if (!existingCodes.has(tr.dataset.code)) {
+                        tr.classList.add('updated');
+                        setTimeout(() => tr.classList.remove('updated'), 1500);
+                    }
+                });
+
+                // Hide/show empty state
+                const empty = document.getElementById('emptyState');
+                if (empty) empty.style.display = funds.length ? 'none' : 'block';
+            } catch (e) { /* silent fail */ }
+        }
+
+        // ── Status refresh ──
+        async function refreshStatus() {
+            try {
+                const resp = await fetch('/api/status');
+                if (!resp.ok) return;
+                const d = await resp.json();
+
+                document.getElementById('lastScanTime').textContent = d.last_scan || '—';
+                document.getElementById('statTotal').textContent = d.fund_count;
+                document.getElementById('statOpen').textContent = d.open_count;
+                document.getElementById('statPaused').textContent = d.paused_count;
+                document.getElementById('statChanges').textContent = d.change_count;
+
+                if (d.fx_rate) {
+                    document.getElementById('statFx').textContent = d.fx_rate.toFixed(4);
+                    document.getElementById('statFxTime').textContent = d.fx_time || '';
+                }
+
+                const pill = document.getElementById('statusPill');
+                const statusText = document.getElementById('statusText');
+                const refreshBtn = document.getElementById('refreshBtn');
+                if (d.is_scanning) {
+                    pill.classList.add('scanning');
+                    statusText.textContent = '扫描中...';
+                    if (refreshBtn) refreshBtn.disabled = true;
+                } else {
+                    pill.classList.remove('scanning');
+                    statusText.textContent = '就绪';
+                    if (refreshBtn) refreshBtn.disabled = false;
+                }
+            } catch (e) { /* silent fail */ }
+        }
+
+        // ── Local search filter ──
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                currentQuery = this.value.trim();
+                const q = currentQuery.toLowerCase();
+                document.querySelectorAll('#fundTableBody tr').forEach(row => {
                     const code = row.cells[0]?.textContent?.toLowerCase() || '';
                     const name = row.cells[1]?.textContent?.toLowerCase() || '';
-                    row.style.display = (code.includes(q) || name.includes(q)) ? '' : 'none';
+                    row.style.display = (!q || code.includes(q) || name.includes(q)) ? '' : 'none';
                 });
             });
         }
-        setInterval(async () => {
-            try {
-                const r = await fetch('/api/status');
-                const d = await r.json();
-                const b = document.querySelector('.badge');
-                if (d.is_scanning) { b.className='badge scanning'; b.textContent='⏳ 扫描中...'; }
-                else { b.className='badge'; b.textContent='✅ 就绪'; }
-            } catch(e) {}
-        }, 30000);
+
+        // ── Sort buttons (SPA-style) ──
+        document.querySelectorAll('.btn-sort').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                currentSort = this.dataset.sort;
+                document.querySelectorAll('.btn-sort').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                refreshFunds();
+            });
+        });
+
+        // ── Start intervals ──
+        setInterval(refreshFunds, REFRESH_MS);
+        setInterval(refreshStatus, STATUS_MS);
+
+        // Initial refresh after 2s
+        setTimeout(refreshFunds, 2000);
+        setTimeout(refreshStatus, 1000);
+    })();
     </script>
 </body>
 </html>

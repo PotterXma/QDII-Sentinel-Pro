@@ -70,8 +70,8 @@ def index():
 
     # 汇率
     fx = get_latest_rate()
-    fx_rate = fx["rate"] if fx else None
-    fx_time = fx["recorded_at"] if fx else None
+    fx_rate = fx.get("rate") if fx else None
+    fx_time = fx.get("recorded_at") if fx else None
 
     # 统计
     all_funds = get_all_funds()
@@ -130,6 +130,35 @@ def refresh():
     return redirect(url_for("index"))
 
 
+@app.route("/refresh_deep", methods=["POST"])
+def refresh_deep():
+    """手动触发深度扫描（后台线程执行）"""
+    global _is_scanning
+
+    with _scan_lock:
+        if _is_scanning:
+            return jsonify({"status": "already_running", "message": "扫描正在进行中"}), 409
+        _is_scanning = True
+
+    def _do_deep_scan():
+        global _is_scanning
+        try:
+            from deep_scanner import run_deep_scan
+            from scorer import update_all_scores
+
+            run_deep_scan()
+            update_all_scores()
+        except Exception as e:
+            logger.error("手动深度扫描失败: %s", str(e))
+        finally:
+            _is_scanning = False
+
+    t = threading.Thread(target=_do_deep_scan, daemon=True)
+    t.start()
+
+    return redirect(url_for("index"))
+
+
 @app.route("/history")
 def history():
     """变动历史页"""
@@ -167,8 +196,8 @@ def api_status():
         "last_scan": display_scan_time,
         "fund_count": len(all_funds),
         "is_scanning": _is_scanning,
-        "fx_rate": fx["rate"] if fx else None,
-        "fx_time": fx["recorded_at"] if fx else None,
+        "fx_rate": fx.get("rate") if fx else None,
+        "fx_time": fx.get("recorded_at") if fx else None,
         "open_count": sum(1 for f in all_funds if f["limit_amount"] > 0),
         "paused_count": sum(1 for f in all_funds if f["limit_amount"] == 0.0),
         "change_count": len(recent),

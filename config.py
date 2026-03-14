@@ -30,14 +30,11 @@ else:
 
 # ── 目录配置 ─────────────────────────────────────────────
 
-# 数据写入 APPDATA 防权限冲突
-APPDATA_DIR = os.path.join(os.environ.get("APPDATA", EXE_DIR), "QDII_Sentinel")
-DATA_DIR = os.path.join(APPDATA_DIR, "data")
-
-# 日志写入 exe 同级目录 (用户要求)
+# 数据和日志直接写入 exe 同级目录 (用户要求便携式部署)
+DATA_DIR = os.path.join(EXE_DIR, "data")
 LOG_DIR = os.path.join(EXE_DIR, "logs")
 
-for _dir in (APPDATA_DIR, LOG_DIR, DATA_DIR):
+for _dir in (LOG_DIR, DATA_DIR):
     os.makedirs(_dir, exist_ok=True)
 
 # ── 读取 config.ini ──────────────────────────────────────
@@ -46,7 +43,6 @@ for _dir in (APPDATA_DIR, LOG_DIR, DATA_DIR):
 _cfg = configparser.ConfigParser()
 _cfg_candidates = [
     os.path.join(EXE_DIR, "config.ini"),
-    os.path.join(APPDATA_DIR, "config.ini"),
     resource_path("config.ini"),
 ]
 _cfg_found = False
@@ -74,7 +70,7 @@ DAILY_PUSH_MINUTE = _cfg.getint("General", "daily_push_minute", fallback=30)
 
 # ── 数据库 ───────────────────────────────────────────────
 
-DB_PATH = os.path.join(DATA_DIR, "qdii_sentinel.db")
+DB_PATH = os.path.join(EXE_DIR, "qdii_sentinel.db")
 
 # ── [Bark] ───────────────────────────────────────────────
 

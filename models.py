@@ -81,9 +81,57 @@ def init_db(db_path=None):
 
             CREATE INDEX IF NOT EXISTS idx_history_code ON fund_history(code);
             CREATE INDEX IF NOT EXISTS idx_history_time ON fund_history(changed_at);
-            CREATE INDEX IF NOT EXISTS idx_fx_time ON exchange_rates(recorded_at);
-            CREATE INDEX IF NOT EXISTS idx_push_log_code ON push_log(fund_code);
+            CREATE INDEX IF NOT EXISTS idx_history_code ON fund_history(code);
+            CREATE INDEX IF NOT EXISTS idx_history_time ON fund_history(changed_at);
         """)
+
+        # ---------- 自动检测并修复表结构问题 (向下兼容旧版本数据库) ----------
+        expected_schema = {
+            "exchange_rates": {
+                "currency": "TEXT DEFAULT 'USD/CNY'",
+                "recorded_at": "TEXT DEFAULT ''"
+            },
+            "fund_detail": {
+                "last_deep_scan": "TEXT DEFAULT ''",
+                "nav_history": "TEXT DEFAULT ''",
+                "score": "REAL DEFAULT 0"
+            },
+            "funds": {
+                "limit_text": "TEXT DEFAULT ''",
+                "current_nav": "REAL DEFAULT 0.0",
+                "day_growth": "REAL DEFAULT 0.0",
+                "last_update": "TEXT DEFAULT ''"
+            },
+            "fund_history": {
+                "name": "TEXT DEFAULT ''",
+                "old_text": "TEXT DEFAULT ''",
+                "new_text": "TEXT DEFAULT ''"
+            }
+        }
+
+        for table, columns in expected_schema.items():
+            # 检查老数据库中表是否真已存在
+            table_check = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone()
+            if table_check:
+                # 如果表存在，探测缺少哪些列
+                cursor = conn.execute(f"PRAGMA table_info({table})")
+                existing_columns = [row["name"] for row in cursor.fetchall()]
+                
+                for col_name, col_def in columns.items():
+                    if col_name not in existing_columns:
+                        logger.info("升级表结构: [%s] 正在增加列 [%s]", table, col_name)
+                        try:
+                            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}")
+                        except Exception as e:
+                            logger.error("添加字段失败 %s.%s: %s", table, col_name, e)
+
+        # Now safe to create index on push_log and exchange_rates
+        try:
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_fx_time ON exchange_rates(recorded_at)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_push_log_code ON push_log(fund_code)")
+        except sqlite3.OperationalError:
+            pass
+
         conn.commit()
         logger.info("数据库初始化完成")
     finally:
@@ -271,8 +319,11 @@ def get_rate_change(days=30, currency="USD/CNY", db_path=None):
                ORDER BY recorded_at ASC LIMIT 1""",
             (currency, days),
         ).fetchone()
-        if latest and oldest and oldest["rate"] > 0:
-            return (latest["rate"] - oldest["rate"]) / oldest["rate"]
+        if latest and oldest:
+            latest_rate = latest.get("rate", 0)
+            oldest_rate = oldest.get("rate", 0)
+            if oldest_rate > 0:
+                return (latest_rate - oldest_rate) / oldest_rate
         return 0.0
     finally:
         conn.close()

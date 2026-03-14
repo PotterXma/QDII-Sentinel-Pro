@@ -22,7 +22,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from config import (
     SCHEDULE_HOURS, DEEP_SCAN_HOURS, FX_UPDATE_HOURS,
-    FLASK_PORT, SINGLETON_PORT, LOG_DIR, APPDATA_DIR,
+    FLASK_PORT, SINGLETON_PORT, LOG_DIR, DATA_DIR,
     DAILY_PUSH_HOUR, DAILY_PUSH_MINUTE,
 )
 from models import init_db
@@ -196,6 +196,13 @@ def _on_manual_scan(icon, item):
     t.start()
 
 
+def _on_manual_deep_scan(icon, item):
+    """手动触发一次深度扫描"""
+    logger.info("[手动] 开始深度扫描...")
+    t = threading.Thread(target=task_deep_scan, daemon=True)
+    t.start()
+
+
 def _on_exit(icon, item):
     """退出系统 — 按顺序清理所有资源"""
     global _scheduler
@@ -242,7 +249,7 @@ def main():
 
     logger.info("=" * 60)
     logger.info("QDII 哨兵 Pro 启动中...")
-    logger.info("  数据目录: %s", APPDATA_DIR)
+    logger.info("  数据目录: %s", DATA_DIR)
     logger.info("  日志目录: %s", LOG_DIR)
     logger.info("  基础扫描: 每%dh | 深度扫描: 每%dh | 汇率: 每%dh",
                 SCHEDULE_HOURS, DEEP_SCAN_HOURS, FX_UPDATE_HOURS)
@@ -320,7 +327,8 @@ def main():
         title="QDII 哨兵 Pro",
         menu=pystray.Menu(
             pystray.MenuItem("📊 打开看板", _on_open_dashboard, default=True),
-            pystray.MenuItem("🔄 立即执行", _on_manual_scan),
+            pystray.MenuItem("🔄 基础扫描", _on_manual_scan),
+            pystray.MenuItem("🔍 深度扫描", _on_manual_deep_scan),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("❌ 退出系统", _on_exit),
         ),

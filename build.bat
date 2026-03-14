@@ -13,16 +13,17 @@ if errorlevel 1 (
 )
 
 echo [*] Building...
-pyinstaller --onefile --noconsole --name QDII_Sentinel ^
+pyinstaller --clean --onefile --noconsole --name QDII_Sentinel ^
     --hidden-import pystray._win32 ^
     --hidden-import PIL ^
     --hidden-import PIL._tkinter_finder ^
     --add-data "templates;templates" ^
     main.py
 
-echo [*] Copying config...
+echo [*] Copying config and database...
 if not exist "dist" mkdir dist
 copy /Y config.ini dist\
+if exist "qdii_sentinel.db" copy /Y qdii_sentinel.db dist\
 
 echo.
 echo ===================================
@@ -34,4 +35,3 @@ echo.
 echo  NOTE: Place config.ini in the same
 echo  folder as QDII_Sentinel.exe
 echo ===================================
-pause

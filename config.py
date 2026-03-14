@@ -76,6 +76,8 @@ DB_PATH = os.path.join(EXE_DIR, "qdii_sentinel.db")
 
 BARK_KEY = _cfg.get("Bark", "push_key", fallback="")
 BARK_SERVER = _cfg.get("Bark", "server", fallback="https://api.day.app").rstrip("/")
+BARK_SOUND = _cfg.get("Bark", "sound", fallback="minuet")
+BARK_LEVEL = _cfg.get("Bark", "level", fallback="timeSensitive")  # active, timeSensitive, passive, critical
 
 # ── [SMTP] ───────────────────────────────────────────────
 

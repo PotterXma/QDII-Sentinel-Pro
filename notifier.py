@@ -15,7 +15,7 @@ import requests
 
 from config import (
     SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_RECEIVER,
-    BARK_KEY, BARK_SERVER,
+    BARK_KEY, BARK_SERVER, BARK_SOUND, BARK_LEVEL,
     WECHAT_WEBHOOK_URL,
     PUSH_DEDUP_ENABLED,
 )
@@ -76,7 +76,8 @@ def send_bark_push(title, body, group="QDII", url=None):
             "title": title,
             "body": body,
             "group": group,
-            "sound": "minuet",
+            "sound": BARK_SOUND,
+            "level": BARK_LEVEL,
             "isArchive": 1,
         }
         if url:

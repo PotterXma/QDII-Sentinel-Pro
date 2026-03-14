@@ -72,7 +72,7 @@ DAILY_PUSH_MINUTE = _cfg.getint("General", "daily_push_minute", fallback=30)
 
 # ── 数据库 ───────────────────────────────────────────────
 
-DB_PATH = os.path.join(APP_DATA_ROOT, "data.db")
+DB_PATH = os.path.join(EXE_DIR, "qdii_sentinel.db")
 
 # ── [Bark] ───────────────────────────────────────────────
 

@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
         :root {
             --bg-base: #0a0e1a;
             --bg-surface: #111827;
@@ -28,51 +27,33 @@
             --gradient-success: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
             --border: rgba(148, 163, 184, 0.08);
             --border-accent: rgba(129, 140, 248, 0.2);
-            --red: #f87171;
-            --red-bg: rgba(248, 113, 113, 0.12);
-            --green: #4ade80;
-            --green-bg: rgba(74, 222, 128, 0.12);
-            --yellow: #fbbf24;
-            --yellow-bg: rgba(251, 191, 36, 0.12);
+            --red: #f87171; --red-bg: rgba(248, 113, 113, 0.12);
+            --green: #4ade80; --green-bg: rgba(74, 222, 128, 0.12);
+            --yellow: #fbbf24; --yellow-bg: rgba(251, 191, 36, 0.12);
             --blue: #60a5fa;
-            --radius: 16px;
-            --radius-sm: 10px;
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+            --radius: 16px; --radius-sm: 10px;
             --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.3);
             --shadow-glow: 0 0 40px rgba(129, 140, 248, 0.06);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg-base);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
+            background: var(--bg-base); color: var(--text-primary);
+            min-height: 100vh; overflow-x: hidden;
         }
-
-        /* Ambient background glow */
         body::before {
-            content: '';
-            position: fixed;
-            top: -50%; left: -50%;
+            content: ''; position: fixed; top: -50%; left: -50%;
             width: 200%; height: 200%;
-            background: radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
-                        radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.03) 0%, transparent 50%),
-                        radial-gradient(ellipse at 50% 80%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
-            z-index: -1;
-            animation: ambientDrift 20s ease-in-out infinite alternate;
+            background: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.04) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.03) 0%, transparent 50%);
+            z-index: -1; animation: drift 20s ease-in-out infinite alternate;
         }
-        @keyframes ambientDrift {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(-2%, 1%) scale(1.02); }
-        }
+        @keyframes drift { 0%{transform:translate(0,0)} 100%{transform:translate(-2%,1%)} }
 
         /* ─── Header ─── */
         .header {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.9) 0%, rgba(139, 92, 246, 0.9) 50%, rgba(168, 85, 247, 0.85) 100%);
-            backdrop-filter: blur(20px);
-            padding: 24px 40px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.9), rgba(139,92,246,0.9), rgba(168,85,247,0.85));
+            backdrop-filter: blur(20px); padding: 22px 40px;
             display: flex; align-items: center; justify-content: space-between;
             flex-wrap: wrap; gap: 16px;
             border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -80,219 +61,187 @@
         }
         .header-brand { display: flex; align-items: center; gap: 14px; }
         .header-logo {
-            width: 42px; height: 42px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.3rem;
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.15);
+            width: 40px; height: 40px; background: rgba(255,255,255,0.2);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.15);
         }
-        .header h1 { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
-        .header-subtitle { font-size: 0.72rem; color: rgba(255,255,255,0.65); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+        .header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
+        .header-sub { font-size: 0.7rem; color: rgba(255,255,255,0.6); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
         .header-right { display: flex; align-items: center; gap: 16px; }
-        .header-time { font-size: 0.8rem; color: rgba(255,255,255,0.75); display: flex; align-items: center; gap: 6px; }
+        .header-time { font-size: 0.78rem; color: rgba(255,255,255,0.75); display: flex; align-items: center; gap: 6px; }
         .status-pill {
             display: inline-flex; align-items: center; gap: 6px;
-            padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+            padding: 5px 13px; border-radius: 20px; font-size: 0.76rem; font-weight: 600;
             background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
             border: 1px solid rgba(255,255,255,0.1);
-            transition: var(--transition);
         }
-        .status-pill .dot {
-            width: 8px; height: 8px; border-radius: 50%; background: var(--green);
-            box-shadow: 0 0 8px var(--green);
-        }
+        .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
         .status-pill.scanning .dot { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); animation: blink 1.2s ease-in-out infinite; }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
         /* ─── Toolbar ─── */
         .toolbar {
             display: flex; align-items: center; gap: 10px;
-            padding: 14px 40px; background: var(--bg-surface);
+            padding: 12px 40px; background: var(--bg-surface);
             border-bottom: 1px solid var(--border); flex-wrap: wrap;
         }
-        .search-wrap { flex: 1; min-width: 220px; position: relative; }
-        .search-wrap .icon {
-            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-            color: var(--text-muted); font-size: 0.85rem; pointer-events: none;
-        }
+        .search-wrap { flex: 1; min-width: 200px; position: relative; }
+        .search-wrap .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem; pointer-events: none; }
         .search-wrap input {
-            width: 100%; padding: 10px 16px 10px 42px;
+            width: 100%; padding: 9px 16px 9px 40px;
             background: var(--bg-card); border: 1px solid var(--border);
             border-radius: var(--radius-sm); color: var(--text-primary);
-            font-size: 0.88rem; font-family: inherit; outline: none;
+            font-size: 0.86rem; font-family: inherit; outline: none;
             transition: var(--transition);
         }
         .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .search-wrap input::placeholder { color: var(--text-muted); }
-
         .btn {
-            padding: 9px 18px; border: none; border-radius: var(--radius-sm);
-            font-size: 0.82rem; font-weight: 600; font-family: inherit;
+            padding: 8px 16px; border: none; border-radius: var(--radius-sm);
+            font-size: 0.8rem; font-weight: 600; font-family: inherit;
             cursor: pointer; transition: var(--transition);
-            text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
         }
-        .btn-sort {
-            background: var(--bg-card); color: var(--text-secondary);
-            border: 1px solid var(--border);
-        }
+        .btn-sort { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
         .btn-sort:hover { background: var(--bg-card-hover); color: var(--text-primary); }
         .btn-sort.active { background: var(--accent-glow); color: var(--accent-light); border-color: var(--border-accent); }
-        .btn-action {
-            background: var(--gradient-primary); color: #fff;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-        }
-        .btn-action:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); }
-        .btn-action:active { transform: translateY(0); }
+        .btn-action { background: var(--gradient-primary); color: #fff; box-shadow: 0 4px 15px rgba(99,102,241,0.3); }
+        .btn-action:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.4); }
         .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
         .btn-ghost:hover { background: var(--bg-card); color: var(--text-primary); }
 
         /* ─── Content ─── */
-        .content { padding: 28px 40px; max-width: 1600px; margin: 0 auto; }
+        .content { padding: 24px 40px; max-width: 1600px; margin: 0 auto; }
 
-        /* ─── Stats Grid ─── */
-        .stats {
-            display: grid; grid-template-columns: repeat(5, 1fr);
-            gap: 16px; margin-bottom: 28px;
-        }
+        /* ─── Stats ─── */
+        .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 20px; }
         .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px 22px;
-            position: relative; overflow: hidden;
-            transition: var(--transition);
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 18px 20px;
+            position: relative; overflow: hidden; transition: var(--transition);
         }
-        .stat-card::before {
-            content: '';
-            position: absolute; top: 0; left: 0; right: 0; height: 3px;
-            border-radius: var(--radius) var(--radius) 0 0;
-        }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: var(--radius) var(--radius) 0 0; }
         .stat-card:nth-child(1)::before { background: var(--gradient-primary); }
         .stat-card:nth-child(2)::before { background: var(--gradient-success); }
         .stat-card:nth-child(3)::before { background: var(--gradient-warm); }
         .stat-card:nth-child(4)::before { background: var(--gradient-cool); }
         .stat-card:nth-child(5)::before { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-glow); border-color: var(--border-accent); }
-        .stat-icon { font-size: 1.5rem; margin-bottom: 10px; }
-        .stat-label { color: var(--text-muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
-        .stat-value { font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; }
-        .stat-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-glow); border-color: var(--border-accent); }
+        .stat-icon { font-size: 1.4rem; margin-bottom: 8px; }
+        .stat-label { color: var(--text-muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+        .stat-value { font-size: 1.7rem; font-weight: 800; letter-spacing: -1px; }
+        .stat-sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 3px; }
         .stat-value.v-purple { color: var(--accent-light); }
         .stat-value.v-green { color: var(--green); }
         .stat-value.v-red { color: var(--red); }
         .stat-value.v-blue { color: var(--blue); }
         .stat-value.v-yellow { color: var(--yellow); }
 
+        /* ─── Fund Type Tabs ─── */
+        .type-tabs {
+            display: flex; gap: 6px; margin-bottom: 16px;
+            background: var(--bg-card); border-radius: 12px; padding: 4px;
+            border: 1px solid var(--border); width: fit-content;
+        }
+        .type-tab {
+            padding: 8px 20px; border-radius: 9px; font-size: 0.82rem;
+            font-weight: 600; cursor: pointer; transition: var(--transition);
+            color: var(--text-muted); background: transparent; border: none;
+            font-family: inherit; display: flex; align-items: center; gap: 6px;
+        }
+        .type-tab:hover { color: var(--text-secondary); background: rgba(255,255,255,0.03); }
+        .type-tab.active { background: var(--gradient-primary); color: #fff; box-shadow: 0 2px 10px rgba(99,102,241,0.3); }
+        .type-tab .count {
+            font-size: 0.7rem; padding: 1px 7px; border-radius: 10px;
+            background: rgba(255,255,255,0.15); min-width: 22px; text-align: center;
+        }
+        .type-tab.active .count { background: rgba(255,255,255,0.25); }
+
         /* ─── Table ─── */
         .table-wrap {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: var(--shadow-md);
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-md);
         }
         .table-scroll { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         thead { position: sticky; top: 0; z-index: 10; }
-        thead tr { background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1)); }
+        thead tr { background: linear-gradient(90deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1)); }
         th {
-            padding: 14px 14px; text-align: left; font-size: 0.7rem;
-            font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            padding: 13px 14px; text-align: left; font-size: 0.7rem;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
             color: var(--accent-light); white-space: nowrap;
             border-bottom: 1px solid var(--border-accent);
+            user-select: none; position: relative;
         }
+        th.sortable { cursor: pointer; transition: var(--transition); }
+        th.sortable:hover { color: #fff; background: rgba(129,140,248,0.08); }
+        th.sortable::after {
+            content: '⇅'; margin-left: 5px; font-size: 0.65rem;
+            opacity: 0.35; transition: var(--transition);
+        }
+        th.sortable.sort-asc::after { content: '↑'; opacity: 0.9; color: var(--green); }
+        th.sortable.sort-desc::after { content: '↓'; opacity: 0.9; color: var(--accent-light); }
+        th.sortable.sorted { color: #fff; }
         td {
-            padding: 13px 14px; font-size: 0.85rem;
+            padding: 12px 14px; font-size: 0.84rem;
             border-bottom: 1px solid var(--border);
-            transition: var(--transition);
+            transition: background 0.2s;
         }
-        tbody tr { transition: var(--transition); }
-        tbody tr:hover { background: rgba(129, 140, 248, 0.04); }
+        tbody tr { transition: background 0.2s; }
+        tbody tr:hover { background: rgba(129,140,248,0.04); }
         tbody tr:last-child td { border-bottom: none; }
-
-        .fund-code {
-            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-            color: var(--accent); font-weight: 600; font-size: 0.82rem;
-        }
-        .fund-name a {
-            color: var(--text-primary); text-decoration: none;
-            font-weight: 500; transition: var(--transition);
-        }
+        .fund-code { font-family: 'SF Mono','Fira Code','Cascadia Code',monospace; color: var(--accent); font-weight: 600; font-size: 0.82rem; }
+        .fund-name a { color: var(--text-primary); text-decoration: none; font-weight: 500; transition: var(--transition); }
         .fund-name a:hover { color: var(--accent-light); }
-
-        /* Score */
-        .score-cell { display: flex; align-items: center; gap: 10px; }
-        .score-ring {
-            width: 36px; height: 36px; position: relative;
+        .fund-type-badge {
+            display: inline-block; font-size: 0.62rem; padding: 1px 6px;
+            border-radius: 4px; font-weight: 700; margin-left: 6px;
+            vertical-align: middle; letter-spacing: 0.5px;
         }
-        .score-ring svg { width: 36px; height: 36px; transform: rotate(-90deg); }
+        .fund-type-badge.bond { background: rgba(96,165,250,0.15); color: var(--blue); }
+        .fund-type-badge.stock { background: rgba(248,113,113,0.12); color: var(--red); }
+
+        /* Score ring */
+        .score-cell { display: flex; align-items: center; gap: 10px; justify-content: center; }
+        .score-ring { width: 34px; height: 34px; position: relative; }
+        .score-ring svg { width: 34px; height: 34px; transform: rotate(-90deg); }
         .score-ring .track { fill: none; stroke: var(--border); stroke-width: 3; }
         .score-ring .fill { fill: none; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
-        .score-num {
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-            font-size: 0.68rem; font-weight: 800;
-        }
+        .score-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; }
 
-        /* Limit badge */
-        .limit-pill {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 4px 12px; border-radius: 20px;
-            font-size: 0.76rem; font-weight: 600;
-            backdrop-filter: blur(4px);
-        }
+        /* Limit pill */
+        .limit-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 11px; border-radius: 20px; font-size: 0.74rem; font-weight: 600; }
         .limit-pill.l-red { background: var(--red-bg); color: var(--red); }
         .limit-pill.l-green { background: var(--green-bg); color: var(--green); }
         .limit-pill.l-yellow { background: var(--yellow-bg); color: var(--yellow); }
-        .limit-pill.l-gray { background: rgba(100, 116, 139, 0.12); color: var(--text-muted); }
+        .limit-pill.l-gray { background: rgba(100,116,139,0.12); color: var(--text-muted); }
 
         .nav-val { font-weight: 700; font-variant-numeric: tabular-nums; }
         .growth { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 0.82rem; }
         .growth.up { color: var(--red); }
         .growth.down { color: var(--green); }
         .growth.flat { color: var(--text-muted); }
-        .detail-text { color: var(--text-muted); font-size: 0.76rem; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .detail-text { color: var(--text-muted); font-size: 0.74rem; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .size-text { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-        .time-text { color: var(--text-muted); font-size: 0.76rem; white-space: nowrap; }
+        .time-text { color: var(--text-muted); font-size: 0.74rem; white-space: nowrap; }
 
-        /* Update flash */
-        @keyframes rowFlash {
-            0% { background: rgba(129, 140, 248, 0.12); }
-            100% { background: transparent; }
-        }
+        @keyframes rowFlash { 0%{background:rgba(129,140,248,0.12)} 100%{background:transparent} }
         tr.updated { animation: rowFlash 1.5s ease-out; }
 
-        /* ─── Empty ─── */
-        .empty { text-align: center; padding: 80px 20px; }
-        .empty-icon { font-size: 3.5rem; margin-bottom: 16px; opacity: 0.6; }
-        .empty-text { color: var(--text-secondary); font-size: 0.95rem; }
+        .empty { text-align: center; padding: 60px 20px; }
+        .empty-icon { font-size: 3rem; margin-bottom: 14px; opacity: 0.6; }
+        .empty-text { color: var(--text-secondary); font-size: 0.9rem; }
 
-        /* ─── Footer ─── */
-        .footer {
-            text-align: center; padding: 24px 40px;
-            color: var(--text-muted); font-size: 0.72rem;
-            border-top: 1px solid var(--border);
-        }
+        .footer { text-align: center; padding: 20px 40px; color: var(--text-muted); font-size: 0.7rem; border-top: 1px solid var(--border); }
 
-        /* ─── Responsive ─── */
         @media (max-width: 1200px) { .stats { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 768px) {
-            .header, .toolbar, .content { padding-left: 20px; padding-right: 20px; }
+            .header, .toolbar, .content { padding-left: 16px; padding-right: 16px; }
             .stats { grid-template-columns: repeat(2, 1fr); }
-            .header h1 { font-size: 1.15rem; }
         }
-
-        /* ─── Scrollbar ─── */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
-
-        /* Skeleton loading */
-        .skeleton { background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
-            background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
-        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     </style>
 </head>
 <body>
@@ -301,13 +250,11 @@
             <div class="header-logo">🛡️</div>
             <div>
                 <h1>QDII Sentinel Pro</h1>
-                <div class="header-subtitle">Real-Time QDII Fund Monitor</div>
+                <div class="header-sub">Real-Time QDII Fund Monitor</div>
             </div>
         </div>
         <div class="header-right">
-            <div class="header-time" id="headerTime">
-                <span>🕐</span> <span id="lastScanTime">{{ last_scan }}</span>
-            </div>
+            <div class="header-time"><span>🕐</span> <span id="lastScanTime">{{ last_scan }}</span></div>
             <div class="status-pill {{ 'scanning' if is_scanning else '' }}" id="statusPill">
                 <span class="dot"></span>
                 <span id="statusText">{{ '扫描中...' if is_scanning else '就绪' }}</span>
@@ -315,13 +262,11 @@
         </div>
     </header>
 
-    <div class="toolbar" id="toolbar">
+    <div class="toolbar">
         <div class="search-wrap">
             <span class="icon">🔍</span>
             <input type="text" id="searchInput" value="{{ query }}" placeholder="搜索基金名称或代码...">
         </div>
-        <a href="/?sort=score" class="btn btn-sort {{ 'active' if sort_by=='score' else '' }}" data-sort="score">⭐ 评分</a>
-        <a href="/?sort=limit" class="btn btn-sort {{ 'active' if sort_by=='limit' else '' }}" data-sort="limit">📊 限额</a>
         <form method="post" action="/refresh" style="display:inline">
             <button type="submit" class="btn btn-action" id="refreshBtn" {{ 'disabled' if is_scanning else '' }}>🔄 刷新数据</button>
         </form>
@@ -363,93 +308,41 @@
             </div>
         </div>
 
+        <!-- Fund Type Tabs -->
+        <div class="type-tabs" id="typeTabs">
+            <button class="type-tab active" data-type="all">📋 全部 <span class="count" id="countAll">-</span></button>
+            <button class="type-tab" data-type="stock">📈 股票型 <span class="count" id="countStock">-</span></button>
+            <button class="type-tab" data-type="bond">📉 债券型 <span class="count" id="countBond">-</span></button>
+        </div>
+
         <div class="table-wrap">
             <div class="table-scroll">
-                <table>
+                <table id="fundTable">
                     <thead>
                         <tr>
-                            <th>代码</th>
-                            <th>基金名称</th>
-                            <th style="text-align:center">评分</th>
-                            <th>申购状态</th>
+                            <th class="sortable" data-key="code">代码</th>
+                            <th class="sortable" data-key="name">基金名称</th>
+                            <th class="sortable" data-key="score" style="text-align:center">评分</th>
+                            <th class="sortable" data-key="limit_amount">申购状态</th>
                             <th>限额详情</th>
-                            <th style="text-align:right">净值</th>
-                            <th style="text-align:right">日涨跌</th>
-                            <th style="text-align:right">规模(亿)</th>
-                            <th>更新时间</th>
+                            <th class="sortable" data-key="current_nav" style="text-align:right">净值</th>
+                            <th class="sortable" data-key="day_growth" style="text-align:right">日涨跌</th>
+                            <th class="sortable" data-key="fund_size" style="text-align:right">规模(亿)</th>
+                            <th class="sortable" data-key="last_update">更新时间</th>
                         </tr>
                     </thead>
-                    <tbody id="fundTableBody">
-                    {% for f in funds %}
-                        <tr data-code="{{ f.code }}">
-                            <td class="fund-code">{{ f.code }}</td>
-                            <td class="fund-name">
-                                <a href="http://fund.eastmoney.com/{{ f.code }}.html" target="_blank" rel="noopener">{{ f.name }}</a>
-                            </td>
-                            <td style="text-align:center">
-                                {% set sc = f.score|default(0)|float %}
-                                {% set color = '#4ade80' if sc >= 70 else '#fbbf24' if sc >= 40 else '#f87171' %}
-                                {% set circ = 94.2 %}
-                                {% set offset = circ - (circ * sc / 100) %}
-                                <div class="score-cell" style="justify-content:center">
-                                    <div class="score-ring">
-                                        <svg viewBox="0 0 36 36">
-                                            <circle class="track" cx="18" cy="18" r="15"/>
-                                            <circle class="fill" cx="18" cy="18" r="15"
-                                                stroke="{{ color }}"
-                                                stroke-dasharray="{{ circ }}"
-                                                stroke-dashoffset="{{ offset }}"/>
-                                        </svg>
-                                        <span class="score-num" style="color:{{ color }}">{{ "%.0f" | format(sc) }}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                {% if f.limit_amount == 0.0 %}
-                                    <span class="limit-pill l-red">🔴 暂停</span>
-                                {% elif f.limit_amount == -2.0 %}
-                                    <span class="limit-pill l-yellow">🟡 限大额</span>
-                                {% elif f.limit_amount == -1.0 %}
-                                    <span class="limit-pill l-gray">⚪ 未知</span>
-                                {% elif f.limit_amount >= 999999.0 %}
-                                    <span class="limit-pill l-green">🟢 不限</span>
-                                {% elif f.limit_amount <= 1.0 %}
-                                    <span class="limit-pill l-yellow">🟡 {{ "%.2f" | format(f.limit_amount) }}万</span>
-                                {% else %}
-                                    <span class="limit-pill l-green">🟢 {{ "%.2f" | format(f.limit_amount) }}万</span>
-                                {% endif %}
-                            </td>
-                            <td class="detail-text">{{ f.limit_text or '-' }}</td>
-                            <td class="nav-val" style="text-align:right">{{ "%.4f" | format(f.current_nav) if f.current_nav else '-' }}</td>
-                            <td style="text-align:right">
-                                {% if f.day_growth > 0 %}
-                                    <span class="growth up">+{{ "%.2f" | format(f.day_growth * 100) }}%</span>
-                                {% elif f.day_growth < 0 %}
-                                    <span class="growth down">{{ "%.2f" | format(f.day_growth * 100) }}%</span>
-                                {% else %}
-                                    <span class="growth flat">0.00%</span>
-                                {% endif %}
-                            </td>
-                            <td class="size-text" style="text-align:right">{{ "%.2f" | format(f.fund_size) if f.fund_size else '-' }}</td>
-                            <td class="time-text">{{ f.last_update }}</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
+                    <tbody id="fundTableBody"></tbody>
                 </table>
             </div>
-            {% if not funds %}
-            <div class="empty" id="emptyState">
+            <div class="empty" id="emptyState" style="display:none">
                 <div class="empty-icon">📭</div>
-                <div class="empty-text">
-                    {% if query %}未找到匹配 "{{ query }}" 的基金{% else %}暂无数据，请点击「刷新数据」开始首次扫描{% endif %}
-                </div>
+                <div class="empty-text">暂无数据，请点击「刷新数据」开始首次扫描</div>
             </div>
-            {% endif %}
         </div>
     </div>
 
     <footer class="footer">
-        QDII Sentinel Pro · 数据每 <span id="refreshInterval">10</span> 秒自动刷新 · Powered by Eastmoney
+        QDII Sentinel Pro · 数据每 10 秒自动刷新 · Powered by Eastmoney
     </footer>
 
     <script>
@@ -458,160 +351,193 @@
 
         const REFRESH_MS = 10000;
         const STATUS_MS = 5000;
-        let currentSort = new URLSearchParams(window.location.search).get('sort') || 'score';
+
+        let allFunds = [];          // full dataset from API
+        let currentSort = { key: 'score', dir: 'desc' };
+        let currentType = 'all';    // all / stock / bond
         let currentQuery = '';
 
-        // ── Helper ──
-        function formatLimit(amount) {
-            if (amount === 0.0) return '<span class="limit-pill l-red">🔴 暂停</span>';
-            if (amount === -2.0) return '<span class="limit-pill l-yellow">🟡 限大额</span>';
-            if (amount === -1.0) return '<span class="limit-pill l-gray">⚪ 未知</span>';
-            if (amount >= 999999.0) return '<span class="limit-pill l-green">🟢 不限</span>';
-            if (amount <= 1.0) return `<span class="limit-pill l-yellow">🟡 ${amount.toFixed(2)}万</span>`;
-            return `<span class="limit-pill l-green">🟢 ${amount.toFixed(2)}万</span>`;
+        // ── Bond keyword classification (client-side mirror) ──
+        const BOND_KW = ['债券','债','收益','利率','信用','纯债','短债','定期','增强回报','双利','稳健'];
+        function classifyType(name) {
+            if (!name) return 'stock';
+            for (const kw of BOND_KW) { if (name.includes(kw)) return 'bond'; }
+            return 'stock';
         }
 
-        function formatGrowth(g) {
-            const pct = (g * 100).toFixed(2);
-            if (g > 0) return `<span class="growth up">+${pct}%</span>`;
-            if (g < 0) return `<span class="growth down">${pct}%</span>`;
+        // ── Rendering helpers ──
+        function scoreColor(sc) { return sc >= 70 ? '#4ade80' : sc >= 40 ? '#fbbf24' : '#f87171'; }
+
+        function scoreRingHTML(sc) {
+            const c = scoreColor(sc), circ = 94.2, off = circ - (circ * sc / 100);
+            return `<div class="score-cell"><div class="score-ring">
+                <svg viewBox="0 0 36 36"><circle class="track" cx="18" cy="18" r="15"/>
+                <circle class="fill" cx="18" cy="18" r="15" stroke="${c}" stroke-dasharray="${circ}" stroke-dashoffset="${off}"/>
+                </svg><span class="score-num" style="color:${c}">${Math.round(sc)}</span></div></div>`;
+        }
+
+        function limitHTML(a) {
+            if (a === 0.0)  return '<span class="limit-pill l-red">🔴 暂停</span>';
+            if (a === -2.0) return '<span class="limit-pill l-yellow">🟡 限大额</span>';
+            if (a === -1.0) return '<span class="limit-pill l-gray">⚪ 未知</span>';
+            if (a >= 999999) return '<span class="limit-pill l-green">🟢 不限</span>';
+            if (a <= 1.0)   return `<span class="limit-pill l-yellow">🟡 ${a.toFixed(2)}万</span>`;
+            return `<span class="limit-pill l-green">🟢 ${a.toFixed(2)}万</span>`;
+        }
+
+        function growthHTML(g) {
+            const p = (g * 100).toFixed(2);
+            if (g > 0) return `<span class="growth up">+${p}%</span>`;
+            if (g < 0) return `<span class="growth down">${p}%</span>`;
             return '<span class="growth flat">0.00%</span>';
         }
 
-        function scoreColor(sc) {
-            if (sc >= 70) return '#4ade80';
-            if (sc >= 40) return '#fbbf24';
-            return '#f87171';
-        }
-
-        function scoreRing(sc) {
-            const color = scoreColor(sc);
-            const circ = 94.2;
-            const offset = circ - (circ * sc / 100);
-            return `<div class="score-cell" style="justify-content:center">
-                <div class="score-ring">
-                    <svg viewBox="0 0 36 36">
-                        <circle class="track" cx="18" cy="18" r="15"/>
-                        <circle class="fill" cx="18" cy="18" r="15"
-                            stroke="${color}"
-                            stroke-dasharray="${circ}"
-                            stroke-dashoffset="${offset}"/>
-                    </svg>
-                    <span class="score-num" style="color:${color}">${Math.round(sc)}</span>
-                </div>
-            </div>`;
+        function typeBadge(ft) {
+            if (ft === 'bond') return '<span class="fund-type-badge bond">债券</span>';
+            return '<span class="fund-type-badge stock">股票</span>';
         }
 
         function buildRow(f) {
-            return `<tr data-code="${f.code}">
+            const ft = f.fund_type || classifyType(f.name);
+            return `<tr data-code="${f.code}" data-type="${ft}">
                 <td class="fund-code">${f.code}</td>
-                <td class="fund-name"><a href="http://fund.eastmoney.com/${f.code}.html" target="_blank" rel="noopener">${f.name}</a></td>
-                <td style="text-align:center">${scoreRing(f.score || 0)}</td>
-                <td>${formatLimit(f.limit_amount)}</td>
-                <td class="detail-text">${f.limit_text || '-'}</td>
+                <td class="fund-name"><a href="http://fund.eastmoney.com/${f.code}.html" target="_blank">${f.name}</a>${typeBadge(ft)}</td>
+                <td style="text-align:center">${scoreRingHTML(f.score||0)}</td>
+                <td>${limitHTML(f.limit_amount)}</td>
+                <td class="detail-text">${f.limit_text||'-'}</td>
                 <td class="nav-val" style="text-align:right">${f.current_nav ? f.current_nav.toFixed(4) : '-'}</td>
-                <td style="text-align:right">${formatGrowth(f.day_growth || 0)}</td>
+                <td style="text-align:right">${growthHTML(f.day_growth||0)}</td>
                 <td class="size-text" style="text-align:right">${f.fund_size ? f.fund_size.toFixed(2) : '-'}</td>
-                <td class="time-text">${f.last_update || ''}</td>
-            </tr>`;
+                <td class="time-text">${f.last_update||''}</td></tr>`;
         }
 
-        // ── Silent data refresh ──
-        async function refreshFunds() {
+        // ── Sort comparator ──
+        function sortFunds(data, key, dir) {
+            const mult = dir === 'asc' ? 1 : -1;
+            return [...data].sort((a, b) => {
+                let va = a[key], vb = b[key];
+                if (typeof va === 'string') { va = va || ''; vb = vb || ''; return mult * va.localeCompare(vb, 'zh'); }
+                return mult * ((va || 0) - (vb || 0));
+            });
+        }
+
+        // ── Filter + Render ──
+        function renderTable() {
+            let filtered = allFunds;
+
+            // type filter
+            if (currentType !== 'all') {
+                filtered = filtered.filter(f => (f.fund_type || classifyType(f.name)) === currentType);
+            }
+
+            // search filter
+            if (currentQuery) {
+                const q = currentQuery.toLowerCase();
+                filtered = filtered.filter(f =>
+                    f.code.includes(q) || f.name.toLowerCase().includes(q)
+                );
+            }
+
+            // sort
+            filtered = sortFunds(filtered, currentSort.key, currentSort.dir);
+
+            const tbody = document.getElementById('fundTableBody');
+            tbody.innerHTML = filtered.map(buildRow).join('');
+
+            const empty = document.getElementById('emptyState');
+            empty.style.display = filtered.length ? 'none' : 'block';
+        }
+
+        function updateCounts() {
+            const stockCount = allFunds.filter(f => (f.fund_type || classifyType(f.name)) === 'stock').length;
+            const bondCount = allFunds.filter(f => (f.fund_type || classifyType(f.name)) === 'bond').length;
+            document.getElementById('countAll').textContent = allFunds.length;
+            document.getElementById('countStock').textContent = stockCount;
+            document.getElementById('countBond').textContent = bondCount;
+        }
+
+        // ── Data fetch ──
+        async function fetchFunds() {
             try {
-                const params = new URLSearchParams({ sort: currentSort });
-                if (currentQuery) params.set('q', currentQuery);
-                const resp = await fetch('/api/funds?' + params);
+                const resp = await fetch('/api/funds?sort=score');
                 if (!resp.ok) return;
-                const funds = await resp.json();
-
-                const tbody = document.getElementById('fundTableBody');
-                const existingCodes = new Set();
-                tbody.querySelectorAll('tr[data-code]').forEach(r => existingCodes.add(r.dataset.code));
-
-                const newHTML = funds.map(f => buildRow(f)).join('');
-                tbody.innerHTML = newHTML;
-
-                // Flash updated rows
-                const newCodes = new Set(funds.map(f => f.code));
-                tbody.querySelectorAll('tr[data-code]').forEach(tr => {
-                    if (!existingCodes.has(tr.dataset.code)) {
-                        tr.classList.add('updated');
-                        setTimeout(() => tr.classList.remove('updated'), 1500);
-                    }
-                });
-
-                // Hide/show empty state
-                const empty = document.getElementById('emptyState');
-                if (empty) empty.style.display = funds.length ? 'none' : 'block';
-            } catch (e) { /* silent fail */ }
+                allFunds = await resp.json();
+                updateCounts();
+                renderTable();
+            } catch (e) { /* silent */ }
         }
 
-        // ── Status refresh ──
-        async function refreshStatus() {
+        async function fetchStatus() {
             try {
                 const resp = await fetch('/api/status');
                 if (!resp.ok) return;
                 const d = await resp.json();
-
                 document.getElementById('lastScanTime').textContent = d.last_scan || '—';
                 document.getElementById('statTotal').textContent = d.fund_count;
                 document.getElementById('statOpen').textContent = d.open_count;
                 document.getElementById('statPaused').textContent = d.paused_count;
                 document.getElementById('statChanges').textContent = d.change_count;
-
                 if (d.fx_rate) {
                     document.getElementById('statFx').textContent = d.fx_rate.toFixed(4);
                     document.getElementById('statFxTime').textContent = d.fx_time || '';
                 }
-
                 const pill = document.getElementById('statusPill');
                 const statusText = document.getElementById('statusText');
                 const refreshBtn = document.getElementById('refreshBtn');
                 if (d.is_scanning) {
-                    pill.classList.add('scanning');
-                    statusText.textContent = '扫描中...';
+                    pill.classList.add('scanning'); statusText.textContent = '扫描中...';
                     if (refreshBtn) refreshBtn.disabled = true;
                 } else {
-                    pill.classList.remove('scanning');
-                    statusText.textContent = '就绪';
+                    pill.classList.remove('scanning'); statusText.textContent = '就绪';
                     if (refreshBtn) refreshBtn.disabled = false;
                 }
-            } catch (e) { /* silent fail */ }
+            } catch (e) { /* silent */ }
         }
 
-        // ── Local search filter ──
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                currentQuery = this.value.trim();
-                const q = currentQuery.toLowerCase();
-                document.querySelectorAll('#fundTableBody tr').forEach(row => {
-                    const code = row.cells[0]?.textContent?.toLowerCase() || '';
-                    const name = row.cells[1]?.textContent?.toLowerCase() || '';
-                    row.style.display = (!q || code.includes(q) || name.includes(q)) ? '' : 'none';
+        // ── Fund type tabs ──
+        document.getElementById('typeTabs').addEventListener('click', function(e) {
+            const tab = e.target.closest('.type-tab');
+            if (!tab) return;
+            currentType = tab.dataset.type;
+            document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            renderTable();
+        });
+
+        // ── Table header sorting ──
+        document.querySelectorAll('th.sortable').forEach(th => {
+            th.addEventListener('click', function() {
+                const key = this.dataset.key;
+                // Toggle direction
+                if (currentSort.key === key) {
+                    currentSort.dir = currentSort.dir === 'desc' ? 'asc' : 'desc';
+                } else {
+                    currentSort = { key, dir: 'desc' };
+                }
+                // Update header visuals
+                document.querySelectorAll('th.sortable').forEach(h => {
+                    h.classList.remove('sort-asc', 'sort-desc', 'sorted');
                 });
-            });
-        }
-
-        // ── Sort buttons (SPA-style) ──
-        document.querySelectorAll('.btn-sort').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                currentSort = this.dataset.sort;
-                document.querySelectorAll('.btn-sort').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                refreshFunds();
+                this.classList.add('sorted', currentSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+                renderTable();
             });
         });
 
-        // ── Start intervals ──
-        setInterval(refreshFunds, REFRESH_MS);
-        setInterval(refreshStatus, STATUS_MS);
+        // Set default sort indicator
+        const defaultTh = document.querySelector('th[data-key="score"]');
+        if (defaultTh) { defaultTh.classList.add('sorted', 'sort-desc'); }
 
-        // Initial refresh after 2s
-        setTimeout(refreshFunds, 2000);
-        setTimeout(refreshStatus, 1000);
+        // ── Search ──
+        document.getElementById('searchInput').addEventListener('input', function() {
+            currentQuery = this.value.trim();
+            renderTable();
+        });
+
+        // ── Initialize ──
+        fetchFunds();
+        fetchStatus();
+        setInterval(fetchFunds, REFRESH_MS);
+        setInterval(fetchStatus, STATUS_MS);
     })();
     </script>
 </body>

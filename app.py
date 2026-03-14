@@ -162,6 +162,31 @@ def api_status():
     })
 
 
+# ── 基金类型分类 ─────────────────────────────────────────
+
+_BOND_KEYWORDS = [
+    "债券", "债", "收益", "利率", "信用", "纯债", "短债", "定期",
+    "增强回报", "双利", "稳健",
+]
+_STOCK_KEYWORDS = [
+    "纳斯达克", "纳指", "标普", "道琼斯", "罗素", "科技", "芯片",
+    "半导体", "消费", "医药", "医疗", "生物", "指数", "股票",
+    "成长", "价值", "混合", "量化", "精选", "优选", "ETF",
+    "油气", "能源", "黄金", "商品", "资源", "互联网", "新经济",
+    "全球配置", "世纪", "港股", "中概",
+]
+
+
+def _classify_fund_type(name):
+    """根据基金名称关键词分类为 bond / stock"""
+    if not name:
+        return "stock"
+    for kw in _BOND_KEYWORDS:
+        if kw in name:
+            return "bond"
+    return "stock"
+
+
 @app.route("/api/funds")
 def api_funds():
     """JSON 基金数据接口 — 供前端静默刷新"""
@@ -188,6 +213,7 @@ def api_funds():
             "day_growth": f.get("day_growth", 0),
             "fund_size": f.get("fund_size", 0),
             "last_update": f.get("last_update", ""),
+            "fund_type": _classify_fund_type(f["name"]),
         })
 
     return jsonify(result)

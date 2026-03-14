@@ -68,7 +68,8 @@ FX_UPDATE_HOURS = _cfg.getint("General", "fx_update_hours", fallback=12)
 FLASK_PORT = _cfg.getint("General", "flask_port", fallback=5000)
 MONITOR_ALL_QDII = _cfg.getboolean("General", "monitor_all_qdii", fallback=True)
 DAILY_PUSH_HOUR = _cfg.getint("General", "daily_push_hour", fallback=8)
-DAILY_PUSH_MINUTE = _cfg.getint("General", "daily_push_minute", fallback=30)
+DAILY_PUSH_MINUTE = _cfg.getint("General", "daily_push_minute", fallback=0)
+TOP_N = _cfg.getint("General", "top_n", fallback=10)
 
 # ── 数据库 ───────────────────────────────────────────────
 

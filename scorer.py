@@ -49,6 +49,8 @@ def _score_limit(limit_amount):
         return 0
     if limit_amount == -2.0:
         return 10
+    if limit_amount == -3.0:
+        return 0  # 暂不销售
     # -1.0 (未知)
     return 30
 
@@ -209,21 +211,25 @@ def classify_fund_type(name):
     return "混合/其他"
 
 
-def get_top5_recommendations():
+def get_top_recommendations():
     """
-    获取评分最高的 TOP5 基金，附带类型标签。
+    获取评分最高的 TOP N 基金，附带类型标签。
+    N 由 config.ini [General] top_n 控制。
     返回: list of dict，每个包含 code/name/score/fund_type/limit_amount/fund_size 等
     """
     from models import get_funds_with_details
+    from config import TOP_N
 
     funds = get_funds_with_details(order_by="score")
 
-    # 过滤掉暂停申购和评分为 0 的
-    active = [f for f in funds if f.get("score", 0) > 0 and f.get("limit_amount", 0) != 0.0]
+    # 过滤掉暂停申购(0.0)、暂不销售(-3.0)和评分为 0 的
+    active = [f for f in funds if f.get("score", 0) > 0
+              and f.get("limit_amount", 0) != 0.0
+              and f.get("limit_amount", 0) != -3.0]
 
-    top5 = []
-    for f in active[:5]:
-        top5.append({
+    top = []
+    for f in active[:TOP_N]:
+        top.append({
             "code": f["code"],
             "name": f["name"],
             "score": f.get("score", 0),
@@ -236,5 +242,5 @@ def get_top5_recommendations():
             "max_drawdown": f.get("max_drawdown", 0),
         })
 
-    return top5
+    return top
 

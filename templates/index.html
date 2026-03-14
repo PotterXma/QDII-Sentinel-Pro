@@ -384,6 +384,7 @@
         function limitHTML(a, text) {
             if (a === 0.0)  return `<span class="limit-pill l-red">🔴 暂停申购</span>`;
             if (a === -2.0) return `<span class="limit-pill l-yellow">🟡 暂停大额</span>`;
+            if (a === -3.0) return `<span class="limit-pill l-red">🔴 暂不销售</span>`;
             if (a === -1.0) return `<span class="limit-pill l-gray">⚪ 未知状态</span>`;
             if (a >= 999999) return `<span class="limit-pill l-green">🟢 未限购</span>`;
             

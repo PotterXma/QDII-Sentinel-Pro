@@ -36,6 +36,8 @@ def _limit_status(limit_amount):
         return "unknown"
     if limit_amount == -2.0:
         return "large_paused"
+    if limit_amount == -3.0:
+        return "not_for_sale"
     if limit_amount >= 999999.0:
         return "unlimited"
     return f"limited_{limit_amount:.2f}"
@@ -51,6 +53,8 @@ def _format_limit(val):
         return "未知状态"
     if val == -2.0:
         return "暂停大额"
+    if val == -3.0:
+        return "暂不销售"
     if val >= 999999.0:
         return "未限购"
     
@@ -321,36 +325,38 @@ def _score_color(score):
     return "#c62828"
 
 
-def send_daily_top5(top5):
+def send_daily_top5(top_list):
     """
-    发送每日 TOP5 推荐推送。
-    1. Bark: 简洁文字摘要
+    发送每日 TOP N 推荐推送。
+    1. Bark: 简洁文字摘要 (含基金代码)
     2. 邮件: HTML 精美卡片 + 天天基金链接
     3. 企业微信: Markdown
     """
-    if not top5:
-        logger.info("TOP5 无数据，跳过推送")
+    if not top_list:
+        logger.info("TOP 无数据，跳过推送")
         return
 
     from datetime import datetime
+    from config import TOP_N
     today = datetime.now().strftime("%m月%d日")
+    n = len(top_list)
 
-    # ── 1. Bark 推送（简洁摘要）──
-    bark_title = f"📊 QDII 每日 TOP5 ({today})"
+    # ── 1. Bark 推送（含基金代码）──
+    bark_title = f"📊 QDII 每日 TOP{n} ({today})"
     bark_lines = []
-    for i, f in enumerate(top5, 1):
+    for i, f in enumerate(top_list, 1):
         t = f["fund_type"]
         s = f["score"]
-        bark_lines.append(f"{i}. [{t}] {f['name']} — {s:.0f}分")
+        bark_lines.append(f"{i}. [{t}] {f['code']} {f['name']} — {s:.0f}分")
     bark_body = "\n".join(bark_lines)
     # 点击通知跳转第一名基金的天天基金页面
-    top1_url = f"http://fund.eastmoney.com/{top5[0]['code']}.html"
+    top1_url = f"http://fund.eastmoney.com/{top_list[0]['code']}.html"
     send_bark_push(bark_title, bark_body, group="QDII推荐", url=top1_url)
 
     # ── 2. HTML 邮件（精美 + 可点击链接）──
     if _is_smtp_configured():
         rows_html = ""
-        for i, f in enumerate(top5, 1):
+        for i, f in enumerate(top_list, 1):
             fund_url = f"http://fund.eastmoney.com/{f['code']}.html"
             type_badge = _fund_type_badge(f["fund_type"])
             sc = f["score"]
@@ -418,7 +424,7 @@ def send_daily_top5(top5):
             <div style="max-width:700px;margin:auto;background:#fff;border-radius:12px;
                         box-shadow:0 2px 16px rgba(0,0,0,0.08);overflow:hidden">
                 <div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:24px 28px;color:#fff">
-                    <h1 style="margin:0;font-size:20px;font-weight:700">📊 QDII 每日 TOP5 推荐</h1>
+                     <h1 style="margin:0;font-size:20px;font-weight:700">📊 QDII 每日 TOP{n} 推荐</h1>
                     <p style="margin:8px 0 0;opacity:0.85;font-size:13px">{today} · QDII 哨兵 Pro 自动生成</p>
                 </div>
                 <table style="width:100%;border-collapse:collapse">
@@ -447,7 +453,7 @@ def send_daily_top5(top5):
 
         try:
             msg = MIMEMultipart("alternative")
-            msg["Subject"] = f"📊 QDII 每日 TOP5 推荐 ({today})"
+            msg["Subject"] = f"📊 QDII 每日 TOP{n} 推荐 ({today})"
             msg["From"] = SMTP_USER
             msg["To"] = SMTP_RECEIVER
             msg.attach(MIMEText(html, "html", "utf-8"))
@@ -461,45 +467,46 @@ def send_daily_top5(top5):
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(SMTP_USER, [SMTP_RECEIVER], msg.as_string())
             server.quit()
-            logger.info("TOP5 邮件发送成功")
+            logger.info("TOP%d 邮件发送成功", n)
         except Exception as e:
-            logger.error("TOP5 邮件发送失败: %s", str(e))
+            logger.error("TOP%d 邮件发送失败: %s", n, str(e))
 
     # ── 3. 企业微信 Markdown ──
-    wechat_lines = [f"## 📊 QDII 每日 TOP5 ({today})\n"]
-    for i, f in enumerate(top5, 1):
+    wechat_lines = [f"## 📊 QDII 每日 TOP{n} ({today})\n"]
+    for i, f in enumerate(top_list, 1):
         fund_url = f"http://fund.eastmoney.com/{f['code']}.html"
         t = f["fund_type"]
         s = f["score"]
         wechat_lines.append(
-            f"> **{i}.** `[{t}]` [{f['name']}]({fund_url}) — "
+            f"> **{i}.** `{f['code']}` `[{t}]` [{f['name']}]({fund_url}) — "
             f"<font color=\"info\">{s:.0f}分</font>"
         )
     send_wechat_webhook("\n".join(wechat_lines))
 
-    logger.info("每日 TOP5 推送完成")
+    logger.info("每日 TOP%d 推送完成", n)
 
 
 # ── 深度扫描完成推送 ─────────────────────────────────────
 
 
-def send_deep_scan_summary(success, fail, top5=None):
+def send_deep_scan_summary(success, fail, top_list=None):
     """
     深度扫描完成后发送汇总推送。
-    包含扫描统计和当前 TOP5 评分。
+    包含扫描统计和当前 TOP N 评分。
     """
     from datetime import datetime
     now = datetime.now().strftime("%H:%M")
+    n = len(top_list) if top_list else 0
 
     # ── 1. Bark 推送 ──
     bark_title = f"🔍 深度扫描完成 ({now})"
     bark_lines = [f"成功: {success}  失败: {fail}"]
-    if top5:
+    if top_list:
         bark_lines.append("")
-        bark_lines.append("当前 TOP5:")
-        for i, f in enumerate(top5, 1):
+        bark_lines.append(f"当前 TOP{n}:")
+        for i, f in enumerate(top_list, 1):
             bark_lines.append(
-                f"{i}. {f['name']} — {f.get('score', 0):.0f}分"
+                f"{i}. {f['code']} {f['name']} — {f.get('score', 0):.0f}分"
             )
     bark_body = "\n".join(bark_lines)
     send_bark_push(bark_title, bark_body, group="QDII扫描")
@@ -507,12 +514,12 @@ def send_deep_scan_summary(success, fail, top5=None):
     # ── 2. 企业微信 ──
     wechat_lines = [f"## 🔍 深度扫描完成 ({now})\n"]
     wechat_lines.append(f"> 成功: **{success}** | 失败: **{fail}**\n")
-    if top5:
-        wechat_lines.append("**当前 TOP5:**")
-        for i, f in enumerate(top5, 1):
+    if top_list:
+        wechat_lines.append(f"**当前 TOP{n}:**")
+        for i, f in enumerate(top_list, 1):
             sc = f.get("score", 0)
             wechat_lines.append(
-                f"> **{i}.** {f['name']} — <font color=\"info\">{sc:.0f}分</font>"
+                f"> **{i}.** `{f['code']}` {f['name']} — <font color=\"info\">{sc:.0f}分</font>"
             )
     send_wechat_webhook("\n".join(wechat_lines))
 

@@ -29,7 +29,7 @@ from models import init_db
 from scraper import run_full_scan
 from deep_scanner import run_deep_scan
 from fx_tracker import update_exchange_rate
-from scorer import update_all_scores, get_top5_recommendations
+from scorer import update_all_scores, get_top_recommendations
 from notifier import send_daily_top5, send_deep_scan_summary, send_basic_scan_summary
 from app import app, set_last_scan_time, set_scanning_state
 
@@ -154,7 +154,7 @@ def task_deep_scan():
         update_all_scores()
         logger.info("[定时] 深度扫描 + 评分更新完成")
         # 发送完成推送
-        top5 = get_top5_recommendations()
+        top5 = get_top_recommendations()
         send_deep_scan_summary(success, fail, top5)
     except Exception as e:
         logger.error("[定时] 深度扫描异常: %s", str(e))
@@ -180,7 +180,7 @@ def task_daily_top5():
     """每日 TOP5 推荐推送"""
     try:
         logger.info("[定时] 每日 TOP5 推送开始")
-        top5 = get_top5_recommendations()
+        top5 = get_top_recommendations()
         send_daily_top5(top5)
         logger.info("[定时] 每日 TOP5 推送完成")
     except Exception as e:

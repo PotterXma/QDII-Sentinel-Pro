@@ -93,6 +93,8 @@ def parse_limit(text):
 
     if "暂停大额" in text:
         return -2.0
+    if "暂不销售" in text or "不销售" in text:
+        return -3.0
     if "暂停" in text:
         return 0.0
 

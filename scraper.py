@@ -124,8 +124,11 @@ def fetch_qdii_list(session):
         resp = session.get(FUND_LIST_URL, headers=get_random_headers(), timeout=15)
         resp.raise_for_status()
         
-        # 使用审计要求的 gbk ignore 进行安全解码，防止部分接口返回 GB2312 导致解析崩溃
-        content = resp.content.decode('gbk', 'ignore')
+        # 自动检测编码：优先 UTF-8，回退 GBK
+        try:
+            content = resp.content.decode('utf-8')
+        except UnicodeDecodeError:
+            content = resp.content.decode('gbk', 'ignore')
 
         match = re.search(r"\[.*\]", content, re.DOTALL)
         if not match:

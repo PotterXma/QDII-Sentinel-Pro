@@ -449,7 +449,9 @@ def get_funds_with_details(order_by="score", db_path=None):
         }.get(order_by, "COALESCE(d.score, 0) DESC")
 
         rows = conn.execute(
-            f"""SELECT f.*, COALESCE(d.score, 0) as score,
+            f"""SELECT f.code, f.name, f.limit_amount, f.limit_text,
+                       f.current_nav, f.day_growth, f.last_update,
+                       COALESCE(d.score, 0) as score,
                        COALESCE(d.fund_size, 0) as fund_size,
                        COALESCE(d.fee_rate, 0) as fee_rate,
                        COALESCE(d.max_drawdown, 0) as max_drawdown,

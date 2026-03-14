@@ -268,7 +268,10 @@
             <input type="text" id="searchInput" value="{{ query }}" placeholder="搜索基金名称或代码...">
         </div>
         <form method="post" action="/refresh" style="display:inline">
-            <button type="submit" class="btn btn-action" id="refreshBtn" {{ 'disabled' if is_scanning else '' }}>🔄 刷新数据</button>
+            <button type="submit" class="btn btn-action" id="refreshBtn" {{ 'disabled' if is_scanning else '' }}>🔄 基础扫描</button>
+        </form>
+        <form method="post" action="/refresh_deep" style="display:inline">
+            <button type="submit" class="btn btn-action" id="refreshDeepBtn" {{ 'disabled' if is_scanning else '' }} style="background: var(--gradient-warm); box-shadow: 0 4px 15px rgba(245,87,108,0.3); margin-left: 8px;">🔍 深度扫描</button>
         </form>
         <a href="/history" class="btn btn-ghost">📜 历史</a>
     </div>
@@ -492,12 +495,15 @@
                 const pill = document.getElementById('statusPill');
                 const statusText = document.getElementById('statusText');
                 const refreshBtn = document.getElementById('refreshBtn');
+                const refreshDeepBtn = document.getElementById('refreshDeepBtn');
                 if (d.is_scanning) {
                     pill.classList.add('scanning'); statusText.textContent = '扫描中...';
                     if (refreshBtn) refreshBtn.disabled = true;
+                    if (refreshDeepBtn) refreshDeepBtn.disabled = true;
                 } else {
                     pill.classList.remove('scanning'); statusText.textContent = '就绪';
                     if (refreshBtn) refreshBtn.disabled = false;
+                    if (refreshDeepBtn) refreshDeepBtn.disabled = false;
                 }
             } catch (e) { /* silent */ }
         }

@@ -123,7 +123,10 @@ def fetch_qdii_list(session):
     try:
         resp = session.get(FUND_LIST_URL, headers=get_random_headers(), timeout=30)
         resp.raise_for_status()
-        resp.encoding = "utf-8"  # 防止 GBK 导致基金名乱码
+        
+        # 适配 GBK 等编码，防止部分接口返回 GB2312/GBK 导致解析乱码
+        if resp.encoding is None or resp.encoding.lower() == 'iso-8859-1':
+            resp.encoding = resp.apparent_encoding
         content = resp.text
 
         match = re.search(r"\[.*\]", content, re.DOTALL)
@@ -169,7 +172,10 @@ def fetch_fund_detail(session, code):
     try:
         resp = session.get(url, headers=get_random_headers(), timeout=20)
         resp.raise_for_status()
-        resp.encoding = "utf-8"
+        
+        # 适配 GBK 编码
+        if resp.encoding is None or resp.encoding.lower() == 'iso-8859-1':
+            resp.encoding = resp.apparent_encoding
         html = resp.text
 
         result = {"code": code}

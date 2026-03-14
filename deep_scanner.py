@@ -75,7 +75,7 @@ def fetch_fund_info(session, code):
         result["manager"] = mgr_match.group(1).strip() if mgr_match else ""
 
         # 基金规模（亿元）
-        size_match = re.search(r'基金规模.*?([\d.]+)\s*亿', html, re.DOTALL)
+        size_match = re.search(r'规模[^>]*?[：:]\s*([\d.]+)\s*亿', html, re.DOTALL)
         result["fund_size"] = float(size_match.group(1)) if size_match else 0.0
 
         # 管理费率
@@ -109,7 +109,8 @@ def fetch_nav_history(session, code, days=365):
         data = resp.json()
 
         nav_list = []
-        items = data.get("Data", {}).get("LSJZList", [])
+        data_dict = data.get("Data") or {}
+        items = data_dict.get("LSJZList") or []
         for item in items:
             try:
                 nav = float(item.get("DWJZ", 0))
@@ -171,8 +172,8 @@ def deep_scan_single(code):
         nav_list = fetch_nav_history(session, code)
         if nav_list:
             result["max_drawdown"] = calc_max_drawdown(nav_list)
-            # 只保存最近 30 天净值用于展示
-            recent_navs = sorted(nav_list, key=lambda x: x["date"], reverse=True)[:30]
+            # 保存最近 100 天净值用于计算多区间涨幅（近三月需要约90天数据）
+            recent_navs = sorted(nav_list, key=lambda x: x["date"], reverse=True)[:100]
             result["nav_history"] = json.dumps(recent_navs, ensure_ascii=False)
         else:
             result["max_drawdown"] = 0.0

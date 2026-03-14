@@ -371,6 +371,7 @@ def get_funds_with_details(order_by="score", db_path=None):
                        COALESCE(d.fee_rate, 0) as fee_rate,
                        COALESCE(d.max_drawdown, 0) as max_drawdown,
                        COALESCE(d.manager, '') as manager,
+                       COALESCE(d.nav_history, '[]') as nav_history,
                        COALESCE(d.last_deep_scan, '') as last_deep_scan
                 FROM funds f
                 LEFT JOIN fund_detail d ON f.code = d.code

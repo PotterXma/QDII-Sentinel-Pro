@@ -82,9 +82,11 @@ def setup_logging():
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    # 文件处理器 — 按天轮转，保留 30 天
-    file_handler = TimedRotatingFileHandler(
-        log_file, when="midnight", interval=1, backupCount=30, encoding="utf-8"
+    from logging.handlers import RotatingFileHandler
+    
+    # 文件处理器 — 按大小轮转 (单文件最大 10MB，保留 5 个备份)，防止撑爆硬盘
+    file_handler = RotatingFileHandler(
+        log_file, maxBytes=10*1024*1024, backupCount=5, encoding="utf-8"
     )
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(fmt)
@@ -140,12 +142,15 @@ def task_basic_scan():
 def task_deep_scan():
     """深度扫描: 历史净值 / 持仓 / 费率 → 评分"""
     try:
+        set_scanning_state(True)
         logger.info("[定时] 深度扫描开始")
         run_deep_scan()
         update_all_scores()
         logger.info("[定时] 深度扫描 + 评分更新完成")
     except Exception as e:
         logger.error("[定时] 深度扫描异常: %s", str(e))
+    finally:
+        set_scanning_state(False)
 
 
 def task_fx_update():
@@ -207,7 +212,10 @@ def _on_exit(icon, item):
 
     # 3. 停止托盘
     icon.stop()
-    logger.info("QDII 哨兵 Pro 已退出")
+    logger.info("QDII 哨兵 Pro 已发出退出指令")
+    
+    # 4. 强制杀死本进程（防止 Flask / Schedule 守护线程出现孤儿或僵尸）
+    os._exit(0)
 
 
 # ── Flask 守护线程 ───────────────────────────────────────

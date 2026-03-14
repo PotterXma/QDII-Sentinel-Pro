@@ -324,9 +324,11 @@
                             <th class="sortable" data-key="name">基金名称</th>
                             <th class="sortable" data-key="score" style="text-align:center">评分</th>
                             <th class="sortable" data-key="limit_amount">申购状态</th>
-                            <th>限额详情</th>
                             <th class="sortable" data-key="current_nav" style="text-align:right">净值</th>
                             <th class="sortable" data-key="day_growth" style="text-align:right">日涨跌</th>
+                            <th class="sortable" data-key="1w_growth" style="text-align:right">近一周</th>
+                            <th class="sortable" data-key="1m_growth" style="text-align:right">近一月</th>
+                            <th class="sortable" data-key="3m_growth" style="text-align:right">近三月</th>
                             <th class="sortable" data-key="fund_size" style="text-align:right">规模(亿)</th>
                             <th class="sortable" data-key="last_update">更新时间</th>
                         </tr>
@@ -376,13 +378,17 @@
                 </svg><span class="score-num" style="color:${c}">${Math.round(sc)}</span></div></div>`;
         }
 
-        function limitHTML(a) {
-            if (a === 0.0)  return '<span class="limit-pill l-red">🔴 暂停</span>';
-            if (a === -2.0) return '<span class="limit-pill l-yellow">🟡 限大额</span>';
-            if (a === -1.0) return '<span class="limit-pill l-gray">⚪ 未知</span>';
-            if (a >= 999999) return '<span class="limit-pill l-green">🟢 不限</span>';
-            if (a <= 1.0)   return `<span class="limit-pill l-yellow">🟡 ${a.toFixed(2)}万</span>`;
-            return `<span class="limit-pill l-green">🟢 ${a.toFixed(2)}万</span>`;
+        function limitHTML(a, text) {
+            if (a === 0.0)  return `<span class="limit-pill l-red">🔴 暂停申购</span>`;
+            if (a === -2.0) return `<span class="limit-pill l-yellow">🟡 暂停大额</span>`;
+            if (a === -1.0) return `<span class="limit-pill l-gray">⚪ 未知状态</span>`;
+            if (a >= 999999) return `<span class="limit-pill l-green">🟢 未限购</span>`;
+            
+            let yuan = Math.round(a * 10000);
+            let displayStr = yuan.toLocaleString() + '元';
+            
+            if (a <= 1.0)   return `<span class="limit-pill l-yellow">🟡 ${displayStr}</span>`;
+            return `<span class="limit-pill l-green">🟢 ${displayStr}</span>`;
         }
 
         function growthHTML(g) {
@@ -403,10 +409,12 @@
                 <td class="fund-code">${f.code}</td>
                 <td class="fund-name"><a href="http://fund.eastmoney.com/${f.code}.html" target="_blank">${f.name}</a>${typeBadge(ft)}</td>
                 <td style="text-align:center">${scoreRingHTML(f.score||0)}</td>
-                <td>${limitHTML(f.limit_amount)}</td>
-                <td class="detail-text">${f.limit_text||'-'}</td>
+                <td>${limitHTML(f.limit_amount, f.limit_text)}</td>
                 <td class="nav-val" style="text-align:right">${f.current_nav ? f.current_nav.toFixed(4) : '-'}</td>
                 <td style="text-align:right">${growthHTML(f.day_growth||0)}</td>
+                <td style="text-align:right">${growthHTML(f['1w_growth']||0)}</td>
+                <td style="text-align:right">${growthHTML(f['1m_growth']||0)}</td>
+                <td style="text-align:right">${growthHTML(f['3m_growth']||0)}</td>
                 <td class="size-text" style="text-align:right">${f.fund_size ? f.fund_size.toFixed(2) : '-'}</td>
                 <td class="time-text">${f.last_update||''}</td></tr>`;
         }

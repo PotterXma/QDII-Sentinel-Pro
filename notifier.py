@@ -42,18 +42,20 @@ def _limit_status(limit_amount):
 
 
 def _format_limit(val):
-    """格式化限额显示"""
+    """格式化限额显示（统一为：暂停申购、未限购、xxx元）"""
     if val is None:
         return "新增"
     if val == 0.0:
         return "暂停申购"
     if val == -1.0:
-        return "未知"
+        return "未知状态"
     if val == -2.0:
         return "暂停大额"
     if val >= 999999.0:
-        return "不限"
-    return f"{val:.2f}万元"
+        return "未限购"
+    
+    yuan = int(round(val * 10000))
+    return f"{yuan:,}元"
 
 
 # ── Bark 推送（iOS） ─────────────────────────────────────

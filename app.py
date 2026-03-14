@@ -14,7 +14,20 @@ from models import (
 
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+import os
+import sys
+
+def resource_path(relative_path):
+    """获取资源文件的绝对路径 (用于 PyInstaller 套件)"""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
+
+app = Flask(
+    __name__,
+    template_folder=resource_path("templates"),
+    static_folder=resource_path("static")
+)
 
 _last_scan_time = "尚未扫描"
 _scan_lock = threading.Lock()
@@ -201,8 +214,35 @@ def api_funds():
             if q.lower() in f["name"].lower() or q in f["code"]
         ]
 
+    import json
+
     result = []
     for f in funds:
+        nav_history_str = f.get("nav_history", "[]")
+        try:
+            nav_history = json.loads(nav_history_str) if nav_history_str else []
+        except Exception:
+            nav_history = []
+
+        # 计算多区间涨幅
+        gw_1w = gw_1m = gw_3m = 0.0
+        if nav_history:
+            current_nav = nav_history[0]["nav"]
+            
+            # 近一周 (约 5 个交易日)
+            if len(nav_history) >= 5:
+                gw_1w = (current_nav - nav_history[4]["nav"]) / nav_history[4]["nav"]
+            # 近一月 (约 20 个交易日)
+            if len(nav_history) >= 20:
+                gw_1m = (current_nav - nav_history[19]["nav"]) / nav_history[19]["nav"]
+            elif len(nav_history) > 5:
+                gw_1m = (current_nav - nav_history[-1]["nav"]) / nav_history[-1]["nav"]  # 用尽量多的数据
+            # 近三月 (约 60 个交易日)
+            if len(nav_history) >= 60:
+                gw_3m = (current_nav - nav_history[59]["nav"]) / nav_history[59]["nav"]
+            elif len(nav_history) > 20:
+                gw_3m = (current_nav - nav_history[-1]["nav"]) / nav_history[-1]["nav"]
+                
         result.append({
             "code": f["code"],
             "name": f["name"],
@@ -211,6 +251,9 @@ def api_funds():
             "limit_text": f.get("limit_text", ""),
             "current_nav": f.get("current_nav", 0),
             "day_growth": f.get("day_growth", 0),
+            "1w_growth": gw_1w,
+            "1m_growth": gw_1m,
+            "3m_growth": gw_3m,
             "fund_size": f.get("fund_size", 0),
             "last_update": f.get("last_update", ""),
             "fund_type": _classify_fund_type(f["name"]),

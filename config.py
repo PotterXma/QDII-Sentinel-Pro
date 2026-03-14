@@ -33,8 +33,8 @@ else:
 # 根据审计要求：默认数据库路径及日志应设为 %APPDATA%/QDII_Sentinel/
 APP_DATA_ROOT = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'QDII_Sentinel')
 
-DATA_DIR = os.path.join(APP_DATA_ROOT, "data")
-LOG_DIR = os.path.join(APP_DATA_ROOT, "logs")
+DATA_DIR = os.path.join(EXE_DIR, "data")
+LOG_DIR = os.path.join(EXE_DIR, "logs")
 
 for _dir in (LOG_DIR, DATA_DIR):
     os.makedirs(_dir, exist_ok=True)

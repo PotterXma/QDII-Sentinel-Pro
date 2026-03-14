@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QDII Watcher — QDII 基金监控平台</title>
+    <meta name="description" content="实时监控 QDII 基金申购限额、评分、汇率">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d26;
+            --bg-card: #22252f;
+            --bg-hover: #2a2e3a;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a8;
+            --text-muted: #5f6368;
+            --accent-blue: #6c9eff;
+            --accent-gradient: linear-gradient(135deg, #667eea, #764ba2);
+            --border: #2e3241;
+            --red: #ef5350;
+            --yellow: #ffc107;
+            --green: #66bb6a;
+            --gray: #78909c;
+            --radius: 12px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--accent-gradient);
+            padding: 28px 32px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 16px;
+            box-shadow: var(--shadow);
+        }
+        .header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+        .header h1 span { font-size: 1.6rem; }
+        .header-meta { display: flex; align-items: center; gap: 20px; font-size: 0.85rem; color: rgba(255,255,255,0.85); }
+        .badge { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; backdrop-filter: blur(4px); }
+        .badge.scanning { animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+        .toolbar {
+            display: flex; align-items: center; gap: 12px;
+            padding: 16px 32px; background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border); flex-wrap: wrap;
+        }
+        .search-box { flex: 1; min-width: 200px; position: relative; }
+        .search-box input {
+            width: 100%; padding: 10px 16px 10px 40px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text-primary);
+            font-size: 0.9rem; outline: none; transition: border 0.2s;
+        }
+        .search-box input:focus { border-color: var(--accent-blue); }
+        .search-box::before { content:'🔍'; position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:0.9rem; }
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-primary { background: var(--accent-gradient); color: #fff; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--bg-hover); }
+        .btn-active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+
+        .content { padding: 24px 32px; }
+
+        .stats {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px; margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card); border-radius: var(--radius);
+            padding: 18px 20px; border: 1px solid var(--border);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-label { color: var(--text-secondary); font-size: 0.78rem; margin-bottom: 6px; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; }
+        .stat-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        .stat-value.green { color: var(--green); }
+        .stat-value.red { color: var(--red); }
+        .stat-value.yellow { color: var(--yellow); }
+        .stat-value.blue { color: var(--accent-blue); }
+
+        .table-container {
+            background: var(--bg-card); border-radius: var(--radius);
+            border: 1px solid var(--border); overflow-x: auto;
+            box-shadow: var(--shadow);
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        thead tr { background: var(--accent-gradient); }
+        th {
+            padding: 14px 12px; text-align: left; font-size: 0.78rem;
+            font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; color: #fff; white-space: nowrap;
+        }
+        td {
+            padding: 11px 12px; font-size: 0.85rem;
+            border-bottom: 1px solid var(--border); transition: background 0.15s;
+        }
+        tr:hover td { background: var(--bg-hover); }
+        tr:last-child td { border-bottom: none; }
+
+        .fund-code { font-family: 'Courier New', monospace; color: var(--accent-blue); font-weight: 600; }
+        .fund-name a { color: var(--text-primary); text-decoration: none; transition: color 0.2s; }
+        .fund-name a:hover { color: var(--accent-blue); }
+
+        .limit-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+        .limit-red { background: rgba(239,83,80,0.15); color: var(--red); }
+        .limit-yellow { background: rgba(255,193,7,0.15); color: var(--yellow); }
+        .limit-green { background: rgba(102,187,106,0.15); color: var(--green); }
+        .limit-gray { background: rgba(120,144,156,0.15); color: var(--gray); }
+
+        .score-bar { display: flex; align-items: center; gap: 8px; }
+        .score-track { width: 50px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+        .score-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+        .score-val { font-weight: 600; font-size: 0.82rem; min-width: 32px; }
+
+        .growth-pos { color: var(--red); font-weight: 600; }
+        .growth-neg { color: var(--green); font-weight: 600; }
+        .growth-zero { color: var(--text-muted); }
+
+        .section-title { font-size: 1.1rem; font-weight: 700; margin: 32px 0 16px; display: flex; align-items: center; gap: 8px; }
+        .change-list { display: grid; gap: 10px; }
+        .change-item {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; padding: 12px 16px;
+            display: flex; align-items: center; gap: 16px;
+            font-size: 0.85rem; transition: transform 0.15s;
+        }
+        .change-item:hover { transform: translateX(4px); }
+        .change-time { color: var(--text-muted); font-size: 0.78rem; min-width: 130px; }
+
+        .empty { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+
+        @media (max-width: 768px) {
+            .header, .toolbar, .content { padding-left: 16px; padding-right: 16px; }
+            .header h1 { font-size: 1.2rem; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><span>📊</span> QDII Watcher</h1>
+        <div class="header-meta">
+            <span>🕐 更新: {{ last_scan }}</span>
+            <span class="badge {{ 'scanning' if is_scanning else '' }}">
+                {{ '⏳ 扫描中...' if is_scanning else '✅ 就绪' }}
+            </span>
+        </div>
+    </header>
+
+    <div class="toolbar">
+        <div class="search-box">
+            <form method="get" action="/" style="display:contents">
+                <input type="text" name="q" value="{{ query }}"
+                       placeholder="搜索基金名称或代码..." id="searchInput">
+                <input type="hidden" name="sort" value="{{ sort_by }}">
+            </form>
+        </div>
+        <a href="/?sort=score" class="btn btn-secondary {{ 'btn-active' if sort_by=='score' else '' }}">⭐ 评分</a>
+        <a href="/?sort=limit" class="btn btn-secondary {{ 'btn-active' if sort_by=='limit' else '' }}">📊 限额</a>
+        <form method="post" action="/refresh" style="display:inline">
+            <button type="submit" class="btn btn-primary" {{ 'disabled' if is_scanning else '' }}>🔄 刷新</button>
+        </form>
+        <a href="/history" class="btn btn-secondary">📜 历史</a>
+    </div>
+
+    <div class="content">
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">监控总数</div>
+                <div class="stat-value">{{ total_count }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">开放申购</div>
+                <div class="stat-value green">{{ open_count }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">暂停申购</div>
+                <div class="stat-value red">{{ paused_count }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">24h 变动</div>
+                <div class="stat-value yellow">{{ recent_changes | length }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">USD/CNY 汇率</div>
+                {% if fx_rate %}
+                <div class="stat-value blue">{{ "%.4f" | format(fx_rate) }}</div>
+                <div class="stat-sub">{{ fx_time }}</div>
+                {% else %}
+                <div class="stat-value" style="color:var(--text-muted)">—</div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if funds %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>代码</th>
+                        <th>基金名称</th>
+                        <th>评分</th>
+                        <th>申购限额</th>
+                        <th>限额详情</th>
+                        <th>净值</th>
+                        <th>日涨跌</th>
+                        <th>规模(亿)</th>
+                        <th>更新</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for f in funds %}
+                    <tr>
+                        <td class="fund-code">{{ f.code }}</td>
+                        <td class="fund-name">
+                            <a href="http://fund.eastmoney.com/{{ f.code }}.html" target="_blank" rel="noopener">
+                                {{ f.name }}
+                            </a>
+                        </td>
+                        <td>
+                            {% set sc = f.score|default(0)|float %}
+                            <div class="score-bar">
+                                <div class="score-track">
+                                    <div class="score-fill" style="width:{{ sc }}%;background:{% if sc >= 70 %}var(--green){% elif sc >= 40 %}var(--yellow){% else %}var(--red){% endif %}"></div>
+                                </div>
+                                <span class="score-val" style="color:{% if sc >= 70 %}var(--green){% elif sc >= 40 %}var(--yellow){% else %}var(--red){% endif %}">{{ "%.0f" | format(sc) }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if f.limit_amount == 0.0 %}
+                                <span class="limit-badge limit-red">🔴 暂停</span>
+                            {% elif f.limit_amount == -2.0 %}
+                                <span class="limit-badge limit-yellow">🟡 限大额</span>
+                            {% elif f.limit_amount == -1.0 %}
+                                <span class="limit-badge limit-gray">⚪ 未知</span>
+                            {% elif f.limit_amount >= 999999.0 %}
+                                <span class="limit-badge limit-green">🟢 不限</span>
+                            {% elif f.limit_amount <= 1.0 %}
+                                <span class="limit-badge limit-yellow">🟡 {{ "%.2f" | format(f.limit_amount) }}万</span>
+                            {% else %}
+                                <span class="limit-badge limit-green">🟢 {{ "%.2f" | format(f.limit_amount) }}万</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:var(--text-secondary);font-size:0.78rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                            {{ f.limit_text or '-' }}
+                        </td>
+                        <td style="font-weight:600">{{ "%.4f" | format(f.current_nav) if f.current_nav else '-' }}</td>
+                        <td>
+                            {% if f.day_growth > 0 %}
+                                <span class="growth-pos">+{{ "%.2f" | format(f.day_growth * 100) }}%</span>
+                            {% elif f.day_growth < 0 %}
+                                <span class="growth-neg">{{ "%.2f" | format(f.day_growth * 100) }}%</span>
+                            {% else %}
+                                <span class="growth-zero">0.00%</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:var(--text-secondary);font-size:0.82rem">
+                            {{ "%.2f" | format(f.fund_size) if f.fund_size else '-' }}
+                        </td>
+                        <td style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">{{ f.last_update }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty">
+            <div class="empty-icon">📭</div>
+            <div class="empty-text">
+                {% if query %}未找到匹配 "{{ query }}" 的基金{% else %}暂无数据，请点击「刷新」开始首次扫描{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if recent_changes %}
+        <div class="section-title">⚡ 最近 24 小时变动</div>
+        <div class="change-list">
+            {% for c in recent_changes %}
+            <div class="change-item">
+                <span class="change-time">{{ c.changed_at }}</span>
+                <span class="fund-code">{{ c.code }}</span>
+                <span>{{ c.name }}</span>
+                <span style="color:var(--text-muted)">{{ c.old_text or '新增' }} → {{ c.new_text }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const input = document.getElementById('searchInput');
+        if (input) {
+            input.addEventListener('input', function() {
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('tbody tr').forEach(row => {
+                    const code = row.cells[0]?.textContent?.toLowerCase() || '';
+                    const name = row.cells[1]?.textContent?.toLowerCase() || '';
+                    row.style.display = (code.includes(q) || name.includes(q)) ? '' : 'none';
+                });
+            });
+        }
+        setInterval(async () => {
+            try {
+                const r = await fetch('/api/status');
+                const d = await r.json();
+                const b = document.querySelector('.badge');
+                if (d.is_scanning) { b.className='badge scanning'; b.textContent='⏳ 扫描中...'; }
+                else { b.className='badge'; b.textContent='✅ 就绪'; }
+            } catch(e) {}
+        }, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>变动历史 — QDII Watcher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-deep: #080a12;
+            --bg-primary: #0c0f1a;
+            --bg-secondary: #131726;
+            --bg-card: rgba(22,27,45,0.85);
+            --bg-hover: rgba(40,48,80,0.6);
+            --bg-glass: rgba(255,255,255,0.03);
+            --text-primary: #eef0f6;
+            --text-secondary: #8b93a7;
+            --text-muted: #505872;
+            --accent-start: #6366f1;
+            --accent-mid: #8b5cf6;
+            --accent-end: #c084fc;
+            --accent-glow: rgba(99,102,241,0.25);
+            --border: rgba(255,255,255,0.06);
+            --border-accent: rgba(99,102,241,0.2);
+            --red: #f87171;
+            --red-bg: rgba(248,113,113,0.1);
+            --green: #4ade80;
+            --green-bg: rgba(74,222,128,0.1);
+            --blue: #60a5fa;
+            --gray: #94a3b8;
+            --radius-sm: 8px;
+            --radius: 14px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 600px 400px at 20% 10%, rgba(99,102,241,0.08), transparent),
+                radial-gradient(ellipse 500px 350px at 80% 80%, rgba(139,92,246,0.06), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header {
+            position: relative;
+            padding: 28px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            z-index: 1;
+            background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1));
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-start), var(--accent-mid), var(--accent-end), transparent);
+            opacity: 0.5;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 30%, var(--accent-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 8px 18px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(8px);
+        }
+        .back-link:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-accent);
+            color: var(--text-primary);
+        }
+
+        .content {
+            padding: 28px 40px 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .filter-bar input {
+            padding: 11px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.88rem;
+            font-family: inherit;
+            outline: none;
+            width: 220px;
+            transition: all 0.25s;
+        }
+        .filter-bar input::placeholder { color: var(--text-muted); }
+        .filter-bar input:focus {
+            border-color: var(--accent-start);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .filter-bar button {
+            padding: 11px 22px;
+            background: linear-gradient(135deg, var(--accent-start), var(--accent-mid));
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: 0 4px 16px var(--accent-glow);
+            transition: all 0.2s;
+        }
+        .filter-bar button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(99,102,241,0.35);
+        }
+
+        .table-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+            animation: fadeUp 0.5s ease backwards;
+        }
+        .table-header-bar {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: var(--bg-secondary); }
+        th {
+            padding: 13px 18px;
+            text-align: left;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        td {
+            padding: 14px 18px;
+            font-size: 0.87rem;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+        tbody tr:hover td { background: var(--bg-hover); }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: var(--blue);
+            font-weight: 600;
+            font-size: 0.84rem;
+        }
+        .time-cell {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .old-val { color: var(--text-muted); }
+        .new-val { font-weight: 600; color: var(--text-primary); }
+        .arrow-cell {
+            color: var(--accent-mid);
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .empty-icon { font-size: 3.5rem; margin-bottom: 16px; opacity: 0.7; }
+        .empty-text { color: var(--text-secondary); font-size: 0.95rem; }
+
+        .footer {
+            text-align: center;
+            padding: 28px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            border-top: 1px solid var(--border);
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .header, .content { padding-left: 16px; padding-right: 16px; }
+            th, td { padding: 10px 12px; font-size: 0.8rem; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div class="header-icon">📜</div>
+            <h1>变动历史</h1>
+        </div>
+        <a href="/" class="back-link">← 返回主页</a>
+    </header>
+
+    <div class="content">
+        <form class="filter-bar" method="get" action="/history">
+            <input type="text" name="code" value="{{ code_filter }}"
+                   placeholder="按基金代码过滤..." autocomplete="off">
+            <button type="submit">🔍 过滤</button>
+        </form>
+
+        {% if records %}
+        <div class="table-wrap">
+            <div class="table-header-bar">
+                📋 共 {{ records | length }} 条变动记录
+                {% if code_filter %}
+                 · 过滤: {{ code_filter }}
+                {% endif %}
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>代码</th>
+                        <th>名称</th>
+                        <th>旧限额</th>
+                        <th></th>
+                        <th>新限额</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for r in records %}
+                    <tr>
+                        <td class="time-cell">{{ r.changed_at }}</td>
+                        <td class="code">{{ r.code }}</td>
+                        <td>{{ r.name or '-' }}</td>
+                        <td class="old-val">
+                            {% if r.old_limit is none %}
+                                新增
+                            {% elif r.old_text %}
+                                {{ r.old_text }}
+                            {% else %}
+                                {{ '%.2f万' | format(r.old_limit) }}
+                            {% endif %}
+                        </td>
+                        <td class="arrow-cell">→</td>
+                        <td class="new-val">{{ r.new_text or ('%.2f万' | format(r.new_limit)) if r.new_limit is not none else '未知' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <div class="empty-text">暂无变动记录</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <footer class="footer">
+        QDII Watcher · 美股 QDII 基金限额实时监控
+    </footer>
+</body>
+</html>

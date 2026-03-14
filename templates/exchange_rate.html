@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汇率看板 — QDII Sentinel Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg-deep:#080a12;--bg-primary:#0c0f1a;--bg-secondary:#131726;--bg-card:rgba(22,27,45,0.85);--bg-hover:rgba(40,48,80,0.6);--text-primary:#eef0f6;--text-secondary:#8b93a7;--text-muted:#505872;--accent-start:#6366f1;--accent-mid:#8b5cf6;--accent-end:#c084fc;--accent-glow:rgba(99,102,241,0.25);--border:rgba(255,255,255,0.06);--border-accent:rgba(99,102,241,0.2);--red:#f87171;--red-bg:rgba(248,113,113,0.1);--green:#4ade80;--green-bg:rgba(74,222,128,0.1);--orange:#fb923c;--orange-bg:rgba(251,146,60,0.1);--blue:#60a5fa;--radius:14px;--radius-sm:8px}
+        body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-deep);color:var(--text-primary);min-height:100vh;-webkit-font-smoothing:antialiased}
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 600px 400px at 20% 10%,rgba(99,102,241,0.08),transparent),radial-gradient(ellipse 500px 350px at 80% 80%,rgba(139,92,246,0.06),transparent);pointer-events:none;z-index:0}
+
+        .header{position:relative;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;z-index:1;background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.1));border-bottom:1px solid var(--border);backdrop-filter:blur(20px)}
+        .header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent-start),var(--accent-mid),var(--accent-end),transparent);opacity:0.5}
+        .header-left{display:flex;align-items:center;gap:12px}
+        .header-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent-start),var(--accent-end));display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 4px 16px var(--accent-glow)}
+        .header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#fff 30%,var(--accent-end));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .back-link{color:var(--text-secondary);text-decoration:none;font-size:.82rem;padding:8px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+        .back-link:hover{background:var(--bg-hover);border-color:var(--border-accent);color:var(--text-primary)}
+
+        .content{padding:24px 32px 60px;position:relative;z-index:1}
+
+        .rate-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+        .rate-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;backdrop-filter:blur(12px);animation:fadeUp .4s ease backwards}
+        .rate-card:nth-child(2){animation-delay:.08s}
+        .rate-card:nth-child(3){animation-delay:.16s}
+        .rate-label{font-size:.75rem;color:var(--text-muted);margin-bottom:8px}
+        .rate-value{font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums}
+        .rate-sub{font-size:.78rem;color:var(--text-secondary);margin-top:6px}
+
+        .risk-box{padding:20px;border-radius:var(--radius);margin-bottom:24px;animation:fadeUp .45s ease backwards;display:flex;align-items:center;gap:16px}
+        .risk-高{background:var(--red-bg);border:1px solid rgba(248,113,113,0.2)}
+        .risk-中{background:var(--orange-bg);border:1px solid rgba(251,146,60,0.2)}
+        .risk-低{background:var(--green-bg);border:1px solid rgba(74,222,128,0.2)}
+        .risk-未知{background:var(--bg-card);border:1px solid var(--border)}
+        .risk-icon{font-size:2rem}
+        .risk-content h3{font-size:.95rem;font-weight:700;margin-bottom:4px}
+        .risk-content p{font-size:.82rem;color:var(--text-secondary)}
+
+        .chart-box{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px;animation:fadeUp .5s ease backwards}
+        .chart-title{font-size:.88rem;font-weight:600;margin-bottom:16px}
+        .sparkline{display:flex;align-items:end;gap:2px;height:120px;padding-top:10px}
+        .spark-bar{flex:1;background:linear-gradient(to top,var(--accent-start),var(--accent-end));border-radius:2px 2px 0 0;min-width:4px;transition:height .3s;position:relative}
+        .spark-bar:hover{opacity:.8}
+        .spark-bar:hover::after{content:attr(data-val);position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-primary);background:var(--bg-secondary);padding:2px 6px;border-radius:4px;white-space:nowrap}
+        .chart-labels{display:flex;justify-content:space-between;margin-top:6px;font-size:.6rem;color:var(--text-muted)}
+
+        .table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;backdrop-filter:blur(12px);animation:fadeUp .55s ease backwards}
+        .table-header{padding:14px 18px;border-bottom:1px solid var(--border);font-size:.85rem;font-weight:600}
+        table{width:100%;border-collapse:collapse}
+        thead tr{background:var(--bg-secondary)}
+        th{padding:10px 14px;text-align:left;font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);border-bottom:1px solid var(--border)}
+        td{padding:11px 14px;font-size:.82rem;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+        tbody tr:hover td{background:var(--bg-hover)}
+
+        .footer{text-align:center;padding:24px;color:var(--text-muted);font-size:.72rem;border-top:1px solid var(--border);position:relative;z-index:1}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        @media(max-width:768px){.header,.content{padding-left:14px;padding-right:14px}}
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div class="header-icon">💱</div>
+            <h1>汇率看板</h1>
+        </div>
+        <a href="/" class="back-link">← 返回主页</a>
+    </header>
+
+    <div class="content">
+        <!-- Rate Cards -->
+        <div class="rate-cards">
+            <div class="rate-card">
+                <div class="rate-label">USD/CNY 中间价</div>
+                <div class="rate-value">{{ "%.4f"|format(fx_rate.usd_cny) if fx_rate else '—' }}</div>
+                <div class="rate-sub">{{ fx_rate.rate_date if fx_rate else '无数据' }}</div>
+            </div>
+            <div class="rate-card">
+                <div class="rate-label">USD/CNH 离岸</div>
+                <div class="rate-value" style="color:var(--blue)">{{ "%.4f"|format(fx_rate.usd_cnh) if fx_rate and fx_rate.usd_cnh else '—' }}</div>
+                <div class="rate-sub">离岸人民币</div>
+            </div>
+            <div class="rate-card">
+                <div class="rate-label">在岸/离岸价差</div>
+                {% if fx_rate and fx_rate.usd_cnh %}
+                {% set spread = fx_rate.usd_cny - fx_rate.usd_cnh %}
+                <div class="rate-value" style="font-size:1.4rem;color:{% if spread > 0 %}var(--green){% else %}var(--red){% endif %}">
+                    {{ "%+.4f"|format(spread) }}
+                </div>
+                <div class="rate-sub">正值=在岸偏弱</div>
+                {% else %}
+                <div class="rate-value" style="font-size:1.4rem">—</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Risk Assessment -->
+        <div class="risk-box risk-{{ fx_risk.level }}">
+            <div class="risk-icon">
+                {% if fx_risk.level == '高' %}🔴{% elif fx_risk.level == '中' %}🟡{% elif fx_risk.level == '低' %}🟢{% else %}⚪{% endif %}
+            </div>
+            <div class="risk-content">
+                <h3>{{ fx_risk.message or '汇率风险评估' }}</h3>
+                <p>趋势: {{ fx_risk.trend }} · 近30天变动: {{ fx_risk.change_pct }}%</p>
+            </div>
+        </div>
+
+        <!-- Sparkline Chart -->
+        {% if fx_trend and fx_trend|length > 1 %}
+        <div class="chart-box">
+            <div class="chart-title">📈 USD/CNY 近期走势（{{ fx_trend|length }} 天）</div>
+            {% set rates_list = fx_trend|map(attribute='usd_cny')|list %}
+            {% set min_r = rates_list|min %}
+            {% set max_r = rates_list|max %}
+            {% set range_r = max_r - min_r if max_r != min_r else 0.01 %}
+            <div class="sparkline">
+                {% for item in fx_trend %}
+                {% set height = ((item.usd_cny - min_r) / range_r * 100)|int %}
+                <div class="spark-bar" style="height:{{ [height, 3]|max }}%" data-val="{{ '%.4f'|format(item.usd_cny) }}"></div>
+                {% endfor %}
+            </div>
+            <div class="chart-labels">
+                <span>{{ fx_trend[0].rate_date }}</span>
+                <span>{{ fx_trend[-1].rate_date }}</span>
+            </div>
+        </div>
+        {% else %}
+        <div class="chart-box">
+            <div class="chart-title">📈 USD/CNY 走势</div>
+            <p style="color:var(--text-muted);padding:40px 0;text-align:center">数据积累中，系统运行数天后将显示趋势图</p>
+        </div>
+        {% endif %}
+
+        <!-- History Table -->
+        <div class="table-wrap">
+            <div class="table-header">📊 汇率历史记录</div>
+            <table>
+                <thead><tr><th>日期</th><th>USD/CNY</th><th>USD/CNH</th><th>获取时间</th></tr></thead>
+                <tbody>
+                {% for r in fx_trend|reverse if fx_trend %}
+                <tr>
+                    <td>{{ r.rate_date }}</td>
+                    <td>{{ "%.4f"|format(r.usd_cny) }}</td>
+                    <td>{{ "%.4f"|format(r.usd_cnh) if r.usd_cnh else '-' }}</td>
+                    <td style="color:var(--text-muted);font-size:.75rem">{{ r.fetched_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:40px">暂无数据</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="footer">QDII Sentinel Pro · 深度 QDII 基金监控系统</footer>
+</body>
+</html>

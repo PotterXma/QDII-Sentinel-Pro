@@ -30,9 +30,11 @@ else:
 
 # ── 目录配置 ─────────────────────────────────────────────
 
-# 数据和日志直接写入 exe 同级目录 (用户要求便携式部署)
-DATA_DIR = os.path.join(EXE_DIR, "data")
-LOG_DIR = os.path.join(EXE_DIR, "logs")
+# 根据审计要求：默认数据库路径及日志应设为 %APPDATA%/QDII_Sentinel/
+APP_DATA_ROOT = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'QDII_Sentinel')
+
+DATA_DIR = os.path.join(APP_DATA_ROOT, "data")
+LOG_DIR = os.path.join(APP_DATA_ROOT, "logs")
 
 for _dir in (LOG_DIR, DATA_DIR):
     os.makedirs(_dir, exist_ok=True)
@@ -70,7 +72,7 @@ DAILY_PUSH_MINUTE = _cfg.getint("General", "daily_push_minute", fallback=30)
 
 # ── 数据库 ───────────────────────────────────────────────
 
-DB_PATH = os.path.join(EXE_DIR, "qdii_sentinel.db")
+DB_PATH = os.path.join(APP_DATA_ROOT, "data.db")
 
 # ── [Bark] ───────────────────────────────────────────────
 

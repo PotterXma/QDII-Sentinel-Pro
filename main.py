@@ -221,7 +221,11 @@ def _on_exit(icon, item):
     icon.stop()
     logger.info("QDII 哨兵 Pro 已发出退出指令")
     
-    # 4. 强制杀死本进程（防止 Flask / Schedule 守护线程出现孤儿或僵尸）
+    # 4. 强制杀死本进程树（遍历并杀掉相关的 subprocess，防止僵尸）
+    try:
+        os.system(f"taskkill /F /T /PID {os.getpid()} >nul 2>&1")
+    except Exception:
+        pass
     os._exit(0)
 
 

@@ -121,13 +121,11 @@ def fetch_qdii_list(session):
     """
     logger.info("正在获取基金列表: %s", FUND_LIST_URL)
     try:
-        resp = session.get(FUND_LIST_URL, headers=get_random_headers(), timeout=30)
+        resp = session.get(FUND_LIST_URL, headers=get_random_headers(), timeout=15)
         resp.raise_for_status()
         
-        # 适配 GBK 等编码，防止部分接口返回 GB2312/GBK 导致解析乱码
-        if resp.encoding is None or resp.encoding.lower() == 'iso-8859-1':
-            resp.encoding = resp.apparent_encoding
-        content = resp.text
+        # 使用审计要求的 gbk ignore 进行安全解码，防止部分接口返回 GB2312 导致解析崩溃
+        content = resp.content.decode('gbk', 'ignore')
 
         match = re.search(r"\[.*\]", content, re.DOTALL)
         if not match:
@@ -170,13 +168,11 @@ def fetch_fund_detail(session, code):
     """抓取单只基金的申购状态和净值信息。"""
     url = FUND_DETAIL_URL.format(code=code)
     try:
-        resp = session.get(url, headers=get_random_headers(), timeout=20)
+        resp = session.get(url, headers=get_random_headers(), timeout=15)
         resp.raise_for_status()
         
-        # 适配 GBK 编码
-        if resp.encoding is None or resp.encoding.lower() == 'iso-8859-1':
-            resp.encoding = resp.apparent_encoding
-        html = resp.text
+        # 安全解码，防止部分页面结构乱码崩溃
+        html = resp.content.decode('utf-8', 'ignore')
 
         result = {"code": code}
 

@@ -65,10 +65,9 @@ def fetch_fund_info(session, code):
     result = {"code": code}
 
     try:
-        resp = session.get(url, headers=_get_headers(), timeout=20)
+        resp = session.get(url, headers=_get_headers(), timeout=15)
         resp.raise_for_status()
-        resp.encoding = "utf-8"
-        html = resp.text
+        html = resp.content.decode('utf-8', 'ignore')
 
         # 基金经理
         mgr_match = re.search(r'基金经理.*?<a[^>]*>(.*?)</a>', html, re.DOTALL)
@@ -104,7 +103,7 @@ def fetch_nav_history(session, code, days=365):
     headers["Referer"] = f"http://fundf10.eastmoney.com/jjjz_{code}.html"
 
     try:
-        resp = session.get(url, headers=headers, timeout=20)
+        resp = session.get(url, headers=headers, timeout=15)
         resp.raise_for_status()
         data = resp.json()
 

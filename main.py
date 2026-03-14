@@ -30,7 +30,7 @@ from scraper import run_full_scan
 from deep_scanner import run_deep_scan
 from fx_tracker import update_exchange_rate
 from scorer import update_all_scores, get_top5_recommendations
-from notifier import send_daily_top5
+from notifier import send_daily_top5, send_deep_scan_summary, send_basic_scan_summary
 from app import app, set_last_scan_time, set_scanning_state
 
 
@@ -126,13 +126,17 @@ def _create_tray_icon_image():
 
 
 def task_basic_scan():
-    """基础扫描: 限额 + 净值"""
+    """基础扫描: 限额 + 净值 → 推送汇总"""
     try:
         set_scanning_state(True)
         logger.info("[定时] 基础扫描开始")
-        run_full_scan()
+        result = run_full_scan()
+        success = result[0] if result else 0
+        fail = result[1] if result else 0
+        changes = result[2] if result else []
         set_last_scan_time(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         logger.info("[定时] 基础扫描完成")
+        send_basic_scan_summary(success, fail, len(changes))
     except Exception as e:
         logger.error("[定时] 基础扫描异常: %s", str(e))
     finally:
@@ -140,13 +144,18 @@ def task_basic_scan():
 
 
 def task_deep_scan():
-    """深度扫描: 历史净值 / 持仓 / 费率 → 评分"""
+    """深度扫描: 历史净值 / 持仓 / 费率 → 评分 → 推送汇总"""
     try:
         set_scanning_state(True)
         logger.info("[定时] 深度扫描开始")
-        run_deep_scan()
+        result = run_deep_scan()
+        success = result[0] if result else 0
+        fail = result[1] if result else 0
         update_all_scores()
         logger.info("[定时] 深度扫描 + 评分更新完成")
+        # 发送完成推送
+        top5 = get_top5_recommendations()
+        send_deep_scan_summary(success, fail, top5)
     except Exception as e:
         logger.error("[定时] 深度扫描异常: %s", str(e))
     finally:

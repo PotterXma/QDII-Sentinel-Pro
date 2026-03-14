@@ -2,6 +2,7 @@
 QDII Watcher 爬虫模块
 明确 API 端点 / 重试机制 / 随机延迟 / 容错隔离 / 扩展限额解析
 支持 MONITOR_ALL_QDII 模式
+多线程批量扫描
 """
 
 import re
@@ -9,6 +10,7 @@ import json
 import time
 import random
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -20,6 +22,10 @@ from config import (
     USER_AGENTS,
     US_KEYWORDS,
     MONITOR_ALL_QDII,
+    BS_BATCH_SIZE,
+    BS_BATCH_DELAY,
+    BS_MAX_FAILURES,
+    BS_WORKERS,
 )
 
 logger = logging.getLogger(__name__)
@@ -244,25 +250,55 @@ def fetch_fund_detail(session, code):
         return None
 
 
+# ── 单只基金扫描（线程入口）───────────────────────────────
+
+
+def _scan_single_fund(code, name):
+    """线程安全的单只基金扫描: 创建独立 session，抓取 + 写入"""
+    from models import upsert_fund
+
+    session = create_session()
+    try:
+        detail = fetch_fund_detail(session, code)
+        if detail is None:
+            return None, None
+
+        if "name" not in detail or not detail["name"]:
+            detail["name"] = name
+
+        change = upsert_fund(detail)
+        return detail, change
+
+    except Exception as e:
+        logger.error("处理基金 %s 异常: %s", code, str(e))
+        return None, None
+    finally:
+        session.close()
+
+
 # ── 完整扫描 ─────────────────────────────────────────────
 
 
 def run_full_scan():
     """
-    完整流程：获取列表 → 过滤 → 逐只抓取 → 写入 → 通知
+    完整流程：获取列表 → 过滤 → 多线程批量抓取 → 写入 → 通知
     根据 MONITOR_ALL_QDII 决定是否跳过关键词过滤。
+    使用线程池 + 批次控制，与深度扫描相同架构。
     """
-    from models import init_db, upsert_fund
+    from models import init_db
     from notifier import notify_all
 
     logger.info("=" * 50)
-    logger.info("开始完整扫描 (monitor_all_qdii=%s)...", MONITOR_ALL_QDII)
+    logger.info("开始完整扫描 (monitor_all_qdii=%s, workers=%d, batch=%d)...",
+                MONITOR_ALL_QDII, BS_WORKERS, BS_BATCH_SIZE)
 
     init_db()
     session = create_session()
 
     # 1. 获取 QDII 列表
     qdii_funds = fetch_qdii_list(session)
+    session.close()
+
     if not qdii_funds:
         logger.error("未获取到任何 QDII 基金，扫描终止")
         return 0, 0, []
@@ -277,41 +313,66 @@ def run_full_scan():
             logger.warning("关键词过滤后无匹配基金")
             return 0, 0, []
 
-    # 3. 逐只抓取详情
-    success = 0
-    failed = 0
+    # 3. 多线程批量抓取
+    total = len(target_funds)
+    success_total = 0
+    fail_total = 0
     changes = []
 
-    for i, (code, name) in enumerate(target_funds, 1):
-        logger.info("[%d/%d] 正在抓取: %s %s", i, len(target_funds), code, name)
+    for batch_start in range(0, total, BS_BATCH_SIZE):
+        batch = target_funds[batch_start: batch_start + BS_BATCH_SIZE]
+        batch_num = batch_start // BS_BATCH_SIZE + 1
+        logger.info("批次 %d: 处理 %d 只基金 (%d/%d)",
+                     batch_num, len(batch), batch_start + 1, total)
 
-        try:
-            detail = fetch_fund_detail(session, code)
-            if detail is None:
-                failed += 1
-                continue
+        consecutive_failures = 0
+        batch_success = 0
+        batch_fail = 0
 
-            if "name" not in detail or not detail["name"]:
-                detail["name"] = name
+        with ThreadPoolExecutor(max_workers=BS_WORKERS) as executor:
+            future_to_fund = {
+                executor.submit(_scan_single_fund, code, name): (code, name)
+                for code, name in batch
+            }
 
-            change = upsert_fund(detail)
-            if change:
-                changes.append(change)
+            for future in as_completed(future_to_fund):
+                code, name = future_to_fund[future]
+                try:
+                    detail, change = future.result()
+                    if detail is not None:
+                        batch_success += 1
+                        consecutive_failures = 0
+                        if change:
+                            changes.append(change)
+                    else:
+                        batch_fail += 1
+                        consecutive_failures += 1
+                except Exception as e:
+                    batch_fail += 1
+                    consecutive_failures += 1
+                    logger.error("基金 %s 扫描异常: %s", code, str(e))
 
-            success += 1
+                if consecutive_failures >= BS_MAX_FAILURES:
+                    logger.error("连续失败 %d 次，中止当前批次", consecutive_failures)
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    break
 
-        except Exception as e:
-            logger.error("处理基金 %s 异常: %s", code, str(e))
-            failed += 1
+        success_total += batch_success
+        fail_total += batch_fail
 
-        delay = random.uniform(1.0, 3.0)
-        time.sleep(delay)
+        logger.info("批次 %d 完成: 成功=%d, 失败=%d",
+                     batch_num, batch_success, batch_fail)
 
-    logger.info("扫描完成: 成功 %d, 失败 %d, 变动 %d", success, failed, len(changes))
+        # 批次间休息
+        if batch_start + BS_BATCH_SIZE < total:
+            logger.info("批次间休息 %d 秒...", BS_BATCH_DELAY)
+            time.sleep(BS_BATCH_DELAY)
+
+    logger.info("扫描完成: 成功 %d, 失败 %d, 变动 %d", success_total, fail_total, len(changes))
 
     # 4. 通过所有通道发送通知
     if changes:
         notify_all(changes)
 
     logger.info("=" * 50)
-    return success, failed, changes
+    return success_total, fail_total, changes

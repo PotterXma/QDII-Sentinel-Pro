@@ -23,7 +23,9 @@ pyinstaller --clean --onefile --noconsole --name QDII_Sentinel ^
 echo [*] Copying config and database...
 if not exist "dist" mkdir dist
 copy /Y config.ini dist\
-if exist "qdii_sentinel.db" copy /Y qdii_sentinel.db dist\
+if not exist "dist\qdii_sentinel.db" (
+    if exist "qdii_sentinel.db" copy /Y qdii_sentinel.db dist\
+)
 
 echo.
 echo ===================================

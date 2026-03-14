@@ -97,6 +97,15 @@ WECHAT_WEBHOOK_URL = _cfg.get("WeChat", "webhook_url", fallback="")
 
 FX_API_URL = _cfg.get("ExchangeRate", "api_url", fallback="https://open.er-api.com/v6/latest/USD")
 
+# ── [BasicScan] ──────────────────────────────────────────
+
+BS_BATCH_SIZE = _cfg.getint("BasicScan", "batch_size", fallback=50)
+BS_BATCH_DELAY = _cfg.getint("BasicScan", "batch_delay", fallback=30)
+BS_REQUEST_DELAY_MIN = _cfg.getfloat("BasicScan", "request_delay_min", fallback=1)
+BS_REQUEST_DELAY_MAX = _cfg.getfloat("BasicScan", "request_delay_max", fallback=3)
+BS_MAX_FAILURES = _cfg.getint("BasicScan", "max_failures", fallback=10)
+BS_WORKERS = _cfg.getint("BasicScan", "workers", fallback=8)
+
 # ── [DeepScan] ───────────────────────────────────────────
 
 DS_BATCH_SIZE = _cfg.getint("DeepScan", "batch_size", fallback=50)

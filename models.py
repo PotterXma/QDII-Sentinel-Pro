@@ -81,14 +81,16 @@ def init_db(db_path=None):
 
             CREATE INDEX IF NOT EXISTS idx_history_code ON fund_history(code);
             CREATE INDEX IF NOT EXISTS idx_history_time ON fund_history(changed_at);
-            CREATE INDEX IF NOT EXISTS idx_history_code ON fund_history(code);
-            CREATE INDEX IF NOT EXISTS idx_history_time ON fund_history(changed_at);
         """)
 
         # ---------- 自动检测并修复表结构问题 (向下兼容旧版本数据库) ----------
+        # 旧版数据库可能使用不同的列名 (如 usd_cny 而非 rate)。
+        # CREATE TABLE IF NOT EXISTS 对已存在的表是空操作，所以必须通过
+        # ALTER TABLE 补齐代码所需但旧表中缺失的列。
         expected_schema = {
             "exchange_rates": {
                 "currency": "TEXT DEFAULT 'USD/CNY'",
+                "rate": "REAL DEFAULT 0",
                 "recorded_at": "TEXT DEFAULT ''"
             },
             "fund_detail": {
@@ -97,6 +99,7 @@ def init_db(db_path=None):
                 "score": "REAL DEFAULT 0"
             },
             "funds": {
+                "limit_amount": "REAL DEFAULT -1.0",
                 "limit_text": "TEXT DEFAULT ''",
                 "current_nav": "REAL DEFAULT 0.0",
                 "day_growth": "REAL DEFAULT 0.0",
@@ -106,6 +109,12 @@ def init_db(db_path=None):
                 "name": "TEXT DEFAULT ''",
                 "old_text": "TEXT DEFAULT ''",
                 "new_text": "TEXT DEFAULT ''"
+            },
+            "push_log": {
+                "fund_code": "TEXT DEFAULT ''",
+                "limit_amount": "REAL DEFAULT 0",
+                "status": "TEXT DEFAULT ''",
+                "channel": "TEXT DEFAULT 'bark'"
             }
         }
 
@@ -124,6 +133,29 @@ def init_db(db_path=None):
                             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}")
                         except Exception as e:
                             logger.error("添加字段失败 %s.%s: %s", table, col_name, e)
+        # ---------- 数据迁移: 旧列名 → 新列名 ----------
+        # 旧版 exchange_rates 的汇率数据在 usd_cny 列，新版在 rate 列
+        try:
+            cols = [r["name"] for r in conn.execute("PRAGMA table_info(exchange_rates)").fetchall()]
+            if "usd_cny" in cols and "rate" in cols:
+                # 把旧 usd_cny 数据复制到 rate (仅当 rate 仍为默认值时)
+                conn.execute("UPDATE exchange_rates SET rate = usd_cny WHERE rate = 0 OR rate IS NULL")
+                logger.info("数据迁移: exchange_rates.usd_cny → rate 完成")
+            # 旧版用 fetched_at，新版用 recorded_at
+            if "fetched_at" in cols and "recorded_at" in cols:
+                conn.execute("UPDATE exchange_rates SET recorded_at = fetched_at WHERE recorded_at = '' OR recorded_at IS NULL")
+                logger.info("数据迁移: exchange_rates.fetched_at → recorded_at 完成")
+        except Exception as e:
+            logger.warning("exchange_rates 数据迁移跳过: %s", e)
+
+        # 旧版 push_log 的基金代码在 code 列，新版在 fund_code 列
+        try:
+            cols = [r["name"] for r in conn.execute("PRAGMA table_info(push_log)").fetchall()]
+            if "code" in cols and "fund_code" in cols:
+                conn.execute("UPDATE push_log SET fund_code = code WHERE fund_code = '' OR fund_code IS NULL")
+                logger.info("数据迁移: push_log.code → fund_code 完成")
+        except Exception as e:
+            logger.warning("push_log 数据迁移跳过: %s", e)
 
         # Now safe to create index on push_log and exchange_rates
         try:
@@ -320,8 +352,8 @@ def get_rate_change(days=30, currency="USD/CNY", db_path=None):
             (currency, days),
         ).fetchone()
         if latest and oldest:
-            latest_rate = latest.get("rate", 0)
-            oldest_rate = oldest.get("rate", 0)
+            latest_rate = dict(latest).get("rate", 0)
+            oldest_rate = dict(oldest).get("rate", 0)
             if oldest_rate > 0:
                 return (latest_rate - oldest_rate) / oldest_rate
         return 0.0
@@ -466,11 +498,29 @@ def record_push(code, limit_amount, status, channel="bark", db_path=None):
         conn = _get_conn(db_path)
         try:
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # 兼容旧表结构: 旧版有 code(NOT NULL) + push_hash(NOT NULL)，新版用 fund_code
+            cols = [r["name"] for r in conn.execute("PRAGMA table_info(push_log)").fetchall()]
+            has_old_code = "code" in cols
+            has_push_hash = "push_hash" in cols
+
+            # 构建动态列名和值
+            col_names = ["fund_code", "limit_amount", "status", "pushed_at", "channel"]
+            col_values = [code, limit_amount, status, now, channel]
+
+            if has_old_code:
+                col_names.insert(0, "code")
+                col_values.insert(0, code)
+            if has_push_hash:
+                # 旧版去重用的 hash，生成一个兼容值
+                push_hash = f"{code}_{limit_amount}_{status}"
+                col_names.append("push_hash")
+                col_values.append(push_hash)
+
+            placeholders = ", ".join(["?"] * len(col_names))
+            col_str = ", ".join(col_names)
             conn.execute(
-                """INSERT INTO push_log
-                   (fund_code, limit_amount, status, pushed_at, channel)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (code, limit_amount, status, now, channel),
+                f"INSERT INTO push_log ({col_str}) VALUES ({placeholders})",
+                col_values,
             )
             conn.commit()
         finally:

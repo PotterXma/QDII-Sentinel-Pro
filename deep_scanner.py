@@ -90,40 +90,54 @@ def fetch_fund_info(session, code):
     return result
 
 
-def fetch_nav_history(session, code, days=365):
+def fetch_nav_history(session, code, days=100):
     """
-    获取历史净值（近 N 天），用于计算最大回撤。
-    使用天天基金历史净值 API。
+    获取历史净值（近 N 天），用于计算最大回撤和多区间涨幅。
+    天天基金 API 每页最多返回 20 条，需要分页请求。
     """
-    url = (
-        "http://api.fund.eastmoney.com/f10/lsjz"
-        f"?fundCode={code}&pageIndex=1&pageSize={days}"
-    )
-    headers = _get_headers()
-    headers["Referer"] = f"http://fundf10.eastmoney.com/jjjz_{code}.html"
+    PAGE_SIZE = 20
+    pages_needed = (days + PAGE_SIZE - 1) // PAGE_SIZE  # 向上取整
 
-    try:
-        resp = session.get(url, headers=headers, timeout=15)
-        resp.raise_for_status()
-        data = resp.json()
+    all_nav = []
 
-        nav_list = []
-        data_dict = data.get("Data") or {}
-        items = data_dict.get("LSJZList") or []
-        for item in items:
-            try:
-                nav = float(item.get("DWJZ", 0))
-                date = item.get("FSRQ", "")
-                if nav > 0:
-                    nav_list.append({"date": date, "nav": nav})
-            except (ValueError, TypeError):
-                continue
+    for page in range(1, pages_needed + 1):
+        url = (
+            "http://api.fund.eastmoney.com/f10/lsjz"
+            f"?fundCode={code}&pageIndex={page}&pageSize={PAGE_SIZE}"
+        )
+        headers = _get_headers()
+        headers["Referer"] = f"http://fundf10.eastmoney.com/jjjz_{code}.html"
 
-        return nav_list
+        try:
+            resp = session.get(url, headers=headers, timeout=15)
+            resp.raise_for_status()
+            data = resp.json()
 
-    except Exception as e:
-        logger.warning("获取基金 %s 历史净值失败: %s", code, str(e))
-        return []
+            data_dict = data.get("Data") or {}
+            items = data_dict.get("LSJZList") or []
+            if not items:
+                break  # 没有更多数据
+
+            for item in items:
+                try:
+                    nav = float(item.get("DWJZ", 0))
+                    date = item.get("FSRQ", "")
+                    if nav > 0:
+                        all_nav.append({"date": date, "nav": nav})
+                except (ValueError, TypeError):
+                    continue
+
+            if len(items) < PAGE_SIZE:
+                break  # 最后一页
+
+            # 页间小延迟，避免被封
+            time.sleep(random.uniform(0.3, 0.8))
+
+        except Exception as e:
+            logger.warning("获取基金 %s 历史净值第%d页失败: %s", code, page, str(e))
+            break
+
+    return all_nav
 
 
 def calc_max_drawdown(nav_list):

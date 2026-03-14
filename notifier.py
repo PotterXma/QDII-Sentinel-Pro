@@ -479,3 +479,67 @@ def send_daily_top5(top5):
 
     logger.info("每日 TOP5 推送完成")
 
+
+# ── 深度扫描完成推送 ─────────────────────────────────────
+
+
+def send_deep_scan_summary(success, fail, top5=None):
+    """
+    深度扫描完成后发送汇总推送。
+    包含扫描统计和当前 TOP5 评分。
+    """
+    from datetime import datetime
+    now = datetime.now().strftime("%H:%M")
+
+    # ── 1. Bark 推送 ──
+    bark_title = f"🔍 深度扫描完成 ({now})"
+    bark_lines = [f"成功: {success}  失败: {fail}"]
+    if top5:
+        bark_lines.append("")
+        bark_lines.append("当前 TOP5:")
+        for i, f in enumerate(top5, 1):
+            bark_lines.append(
+                f"{i}. {f['name']} — {f.get('score', 0):.0f}分"
+            )
+    bark_body = "\n".join(bark_lines)
+    send_bark_push(bark_title, bark_body, group="QDII扫描")
+
+    # ── 2. 企业微信 ──
+    wechat_lines = [f"## 🔍 深度扫描完成 ({now})\n"]
+    wechat_lines.append(f"> 成功: **{success}** | 失败: **{fail}**\n")
+    if top5:
+        wechat_lines.append("**当前 TOP5:**")
+        for i, f in enumerate(top5, 1):
+            sc = f.get("score", 0)
+            wechat_lines.append(
+                f"> **{i}.** {f['name']} — <font color=\"info\">{sc:.0f}分</font>"
+            )
+    send_wechat_webhook("\n".join(wechat_lines))
+
+    logger.info("深度扫描汇总推送完成")
+
+
+# ── 基础扫描完成推送 ─────────────────────────────────────
+
+
+def send_basic_scan_summary(success, fail, change_count):
+    """
+    基础扫描完成后发送汇总推送。
+    """
+    from datetime import datetime
+    now = datetime.now().strftime("%H:%M")
+
+    # ── Bark 推送 ──
+    bark_title = f"📋 基础扫描完成 ({now})"
+    bark_lines = [f"成功: {success}  失败: {fail}  变动: {change_count}"]
+    if change_count == 0:
+        bark_lines.append("本次无限额变动")
+    bark_body = "\n".join(bark_lines)
+    send_bark_push(bark_title, bark_body, group="QDII扫描")
+
+    # ── 企业微信 ──
+    wechat_lines = [f"## 📋 基础扫描完成 ({now})\n"]
+    wechat_lines.append(f"> 成功: **{success}** | 失败: **{fail}** | 变动: **{change_count}**")
+    send_wechat_webhook("\n".join(wechat_lines))
+
+    logger.info("基础扫描汇总推送完成")

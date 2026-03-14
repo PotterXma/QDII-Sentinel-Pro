@@ -28,11 +28,14 @@ if getattr(sys, 'frozen', False):
 else:
     EXE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ── APPDATA 目录 (静默运行时日志/DB 写入此处) ────────────
+# ── 目录配置 ─────────────────────────────────────────────
 
+# 数据写入 APPDATA 防权限冲突
 APPDATA_DIR = os.path.join(os.environ.get("APPDATA", EXE_DIR), "QDII_Sentinel")
-LOG_DIR = os.path.join(APPDATA_DIR, "logs")
 DATA_DIR = os.path.join(APPDATA_DIR, "data")
+
+# 日志写入 exe 同级目录 (用户要求)
+LOG_DIR = os.path.join(EXE_DIR, "logs")
 
 for _dir in (APPDATA_DIR, LOG_DIR, DATA_DIR):
     os.makedirs(_dir, exist_ok=True)

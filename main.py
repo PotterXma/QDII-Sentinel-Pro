@@ -271,7 +271,9 @@ def main():
         task_fx_update()
         logger.info("执行首次基础扫描...")
         task_basic_scan()
-        logger.info("首次任务完成")
+        logger.info("执行首次深度扫描 (用于初始化近三月基准净值)...")
+        task_deep_scan()
+        logger.info("首次所有初始化任务完成")
 
     init_thread = threading.Thread(target=_initial_tasks, daemon=True, name="InitTasks")
     init_thread.start()

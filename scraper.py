@@ -214,13 +214,31 @@ def fetch_fund_detail(session, code):
         else:
             result["day_growth"] = 0.0
 
+        # ── 申购状态提取（优先级从高到低）──
         limit_text = ""
-        status_match = re.search(
-            r'(?:申购状态|交易状态|申购)[：:]\s*<[^>]*>(.*?)</[^>]*>', html
-        )
-        if status_match:
-            limit_text = status_match.group(1).strip()
 
+        # 优先级 1: JS 变量 fundIsSale = false → 暂不销售 (最可靠)
+        is_sale_match = re.search(r'var\s+fundIsSale\s*=\s*(true|false)', html)
+        if is_sale_match and is_sale_match.group(1) == "false":
+            limit_text = "暂不销售"
+
+        # 优先级 2: "暂不开放购买" 文案
+        if not limit_text and "暂不开放购买" in html:
+            limit_text = "暂不销售"
+
+        # 优先级 3: CSS class notForSale
+        if not limit_text and "notForSale" in html:
+            limit_text = "暂不销售"
+
+        # 优先级 4: 交易状态 / 申购状态 正则
+        if not limit_text:
+            status_match = re.search(
+                r'(?:申购状态|交易状态|申购)[：:]\s*<[^>]*>(.*?)</[^>]*>', html
+            )
+            if status_match:
+                limit_text = status_match.group(1).strip()
+
+        # 优先级 5: 限额文本
         if not limit_text:
             limit_match = re.search(
                 r'(?:限大额|限额|申购限额)[^<]*?(?:<[^>]*>)?\s*([\d,]+(?:\.\d+)?(?:万)?元)',
@@ -229,6 +247,7 @@ def fetch_fund_detail(session, code):
             if limit_match:
                 limit_text = limit_match.group(0).strip()
 
+        # 优先级 6: fundBuy 区域
         if not limit_text:
             buy_match = re.search(
                 r'class="[^"]*?fundBuy[^"]*?"[^>]*>.*?(?:暂停|开放|限大?额)(.*?)<',

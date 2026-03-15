@@ -341,17 +341,18 @@ def send_daily_top5(top_list):
     today = datetime.now().strftime("%m月%d日")
     n = len(top_list)
 
-    # ── 1. Bark 推送（含基金代码）──
+    # ── 1. Bark 推送（评分 + 链接）──
     bark_title = f"📊 QDII 每日 TOP{n} ({today})"
     bark_lines = []
     for i, f in enumerate(top_list, 1):
         t = f["fund_type"]
         s = f["score"]
-        bark_lines.append(f"{i}. [{t}] {f['code']} {f['name']} — {s:.0f}分")
+        bark_lines.append(
+            f"{i}. [{t}] {f['name']} — {s:.0f}分\n"
+            f"http://fund.eastmoney.com/{f['code']}.html"
+        )
     bark_body = "\n".join(bark_lines)
-    # 点击通知跳转第一名基金的天天基金页面
-    top1_url = f"http://fund.eastmoney.com/{top_list[0]['code']}.html"
-    send_bark_push(bark_title, bark_body, group="QDII推荐", url=top1_url)
+    send_bark_push(bark_title, bark_body, group="QDII推荐")
 
     # ── 2. HTML 邮件（精美 + 可点击链接）──
     if _is_smtp_configured():

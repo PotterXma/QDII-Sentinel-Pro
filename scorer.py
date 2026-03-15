@@ -211,10 +211,26 @@ def classify_fund_type(name):
     return "混合/其他"
 
 
+def _base_fund_name(name):
+    """
+    提取基金基础名称，去除 A/B/C/E 份额后缀和币种后缀，
+    用于去重同一基金的不同份额类型。
+    例: '广发全球稳健配置混合(QDII)人民币A' → '广发全球稳健配置混合(QDII)'
+        '广发全球稳健配置混合(QDII)美元现钞' → '广发全球稳健配置混合(QDII)'
+    """
+    import re
+    # 去除末尾的 A/B/C/E/H/I 份额标识
+    s = re.sub(r'[A-HI]$', '', name.strip())
+    # 去除币种后缀: 人民币/美元/美元现钞/美元现汇/港币 等
+    s = re.sub(r'(人民币|美元现钞|美元现汇|美元|港币|港元|欧元|日元)\s*$', '', s)
+    return s.strip()
+
+
 def get_top_recommendations():
     """
     获取评分最高的 TOP N 基金，附带类型标签。
     N 由 config.ini [General] top_n 控制。
+    同一基金的 A/C 份额只保留评分最高的一个。
     返回: list of dict，每个包含 code/name/score/fund_type/limit_amount/fund_size 等
     """
     from models import get_funds_with_details
@@ -227,8 +243,18 @@ def get_top_recommendations():
               and f.get("limit_amount", 0) != 0.0
               and f.get("limit_amount", 0) != -3.0]
 
+    # 同一基金 A/C 去重：保留评分最高的份额
+    seen_bases = set()
+    deduped = []
+    for f in active:
+        base = _base_fund_name(f["name"])
+        if base in seen_bases:
+            continue
+        seen_bases.add(base)
+        deduped.append(f)
+
     top = []
-    for f in active[:TOP_N]:
+    for f in deduped[:TOP_N]:
         top.append({
             "code": f["code"],
             "name": f["name"],

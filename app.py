@@ -77,6 +77,7 @@ def index():
     all_funds = get_all_funds()
     open_count = sum(1 for f in all_funds if f["limit_amount"] > 0)
     paused_count = sum(1 for f in all_funds if f["limit_amount"] == 0.0)
+    not_for_sale_count = sum(1 for f in all_funds if f["limit_amount"] == -3.0)
 
     # 如果 last_scan_time 仍为初始值，尝试从数据库最新记录推断
     display_scan_time = _last_scan_time
@@ -96,6 +97,7 @@ def index():
         total_count=len(all_funds),
         open_count=open_count,
         paused_count=paused_count,
+        not_for_sale_count=not_for_sale_count,
         fx_rate=fx_rate,
         fx_time=fx_time,
     )
@@ -200,6 +202,7 @@ def api_status():
         "fx_time": fx.get("recorded_at") if fx else None,
         "open_count": sum(1 for f in all_funds if f["limit_amount"] > 0),
         "paused_count": sum(1 for f in all_funds if f["limit_amount"] == 0.0),
+        "not_for_sale_count": sum(1 for f in all_funds if f["limit_amount"] == -3.0),
         "change_count": len(recent),
     })
 

@@ -287,13 +287,62 @@ def main():
 
     # 首次任务放入后台线程（防止网络不通时阻塞托盘显示）
     def _initial_tasks():
-        logger.info("执行首次汇率更新...")
-        task_fx_update()
-        logger.info("执行首次基础扫描...")
-        task_basic_scan()
-        logger.info("执行首次深度扫描 (用于初始化近三月基准净值)...")
-        task_deep_scan()
-        logger.info("首次所有初始化任务完成")
+        from models import get_all_funds, get_all_fund_details
+        from datetime import datetime, timedelta
+
+        now = datetime.now()
+        today_str = now.strftime("%Y-%m-%d")
+
+        # ── 检查是否需要基础扫描 ──
+        all_funds = get_all_funds()
+        need_basic = True
+        if all_funds:
+            latest_update = max(
+                (f.get("last_update", "") for f in all_funds),
+                default=""
+            )
+            if latest_update and latest_update.startswith(today_str):
+                need_basic = False
+                logger.info("今日基础扫描已完成 (最后更新: %s)，跳过", latest_update)
+                # 恢复上次扫描时间显示
+                set_last_scan_time(latest_update)
+
+        if need_basic:
+            logger.info("执行首次汇率更新...")
+            task_fx_update()
+            logger.info("执行首次基础扫描...")
+            task_basic_scan()
+        else:
+            # 即使跳过基础扫描，也更新汇率（轻量操作）
+            logger.info("执行汇率更新...")
+            task_fx_update()
+
+        # ── 检查是否需要深度扫描 ──
+        details = get_all_fund_details()
+        need_deep = True
+        if details:
+            latest_deep = max(
+                (d.get("last_deep_scan", "") for d in details),
+                default=""
+            )
+            if latest_deep:
+                try:
+                    last_deep_dt = datetime.strptime(latest_deep, "%Y-%m-%d %H:%M:%S")
+                    hours_since = (now - last_deep_dt).total_seconds() / 3600
+                    if hours_since < DEEP_SCAN_HOURS:
+                        need_deep = False
+                        logger.info(
+                            "深度扫描 %.1f 小时前已完成 (间隔 %dh), 跳过",
+                            hours_since, DEEP_SCAN_HOURS
+                        )
+                except ValueError:
+                    pass  # 格式异常，执行扫描
+
+        if need_deep:
+            logger.info("执行首次深度扫描 (用于初始化近三月基准净值)...")
+            task_deep_scan()
+
+        logger.info("首次初始化任务完成")
 
     init_thread = threading.Thread(target=_initial_tasks, daemon=True, name="InitTasks")
     init_thread.start()

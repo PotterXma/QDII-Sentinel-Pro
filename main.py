@@ -340,7 +340,12 @@ def main():
 
         if need_deep:
             logger.info("执行首次深度扫描 (用于初始化近三月基准净值)...")
-            task_deep_scan()
+            task_deep_scan()  # 内部已包含 update_all_scores()
+        else:
+            # 即使跳过深度扫描，也重新计算评分（配置/权重可能已变更）
+            logger.info("重新计算评分...")
+            update_all_scores()
+            logger.info("评分更新完成")
 
         logger.info("首次初始化任务完成")
 
